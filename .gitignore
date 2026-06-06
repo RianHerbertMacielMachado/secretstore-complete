@@ -6,4 +6,4 @@ node_modules/
 *.db-journal
 dist/
 .wrangler/
-prisma/migrations/
+# prisma/migrations/ — NÃO ignorar: necessário para deploy no servidor
