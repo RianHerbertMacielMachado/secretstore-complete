@@ -1,14 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // ============================================================
-  // OUTPUT STANDALONE — necessário para deploy em VPS/Hostgator
-  // Gera pasta .next/standalone com tudo necessário para rodar
-  // sem precisar de node_modules completo no servidor
-  // ============================================================
-  output: 'standalone',
+  // output: 'standalone' — usado apenas para deploy em VPS/Hostgator
+  // No Vercel NÃO usar standalone (o Vercel gerencia o build automaticamente)
+  // Descomente a linha abaixo SOMENTE se for fazer deploy em VPS:
+  // output: 'standalone',
 
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client', 'prisma', 'nodemailer'],
+    serverComponentsExternalPackages: [
+      '@prisma/client',
+      'prisma',
+      'nodemailer',
+      '@libsql/client',
+      '@prisma/adapter-libsql',
+    ],
   },
 
   images: {
