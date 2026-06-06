@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String?
+  role      String   @default("CUSTOMER")
+  googleId  String?
+  discordId String?
+  avatar    String?
+  emailVerified DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+  accounts  Account[]
+  sessions  Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  image       String?
+  isVisible   Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id                  String      @id @default(cuid())
+  name                String
+  slug                String      @unique
+  description         String
+  price               Float
+  salePrice           Float?
+  mainImage           String
+  images              String      @default("[]")
+  categoryId          String
+  category            Category    @relation(fields: [categoryId], references: [id])
+  driveLink           String      @default("")
+  driveDeliveryMethod String      @default("LINK")
+  status              String      @default("ACTIVE")
+  featured            Boolean     @default(false)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  orderItems          OrderItem[]
+}
+
+model Order {
+  id                  String      @id @default(cuid())
+  userId              String
+  user                User        @relation(fields: [userId], references: [id])
+  items               OrderItem[]
+  totalAmount         Float
+  discountAmount      Float       @default(0)
+  couponCode          String?
+  paymentMethod       String
+  paymentStatus       String      @default("PENDING")
+  paymentId           String?
+  paymentConfirmedAt  DateTime?
+  deliveryStatus      String      @default("PENDING")
+  deliveryEmailSentAt DateTime?
+  customerEmail       String      @default("")
+  customerName        String      @default("")
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
+
+model Coupon {
+  id               String    @id @default(cuid())
+  code             String    @unique
+  discountType     String
+  discountValue    Float
+  scope            String    @default("ALL")
+  categoryIds      String    @default("[]")
+  productIds       String    @default("[]")
+  expiresAt        DateTime?
+  totalUsageLimit  Int?
+  perCustomerLimit Int       @default(1)
+  usageCount       Int       @default(0)
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model SiteConfig {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  value       String
+  isEncrypted Boolean @default(false)
+  updatedAt   DateTime @updatedAt
+}
+
+model WebhookLog {
+  id        String   @id @default(cuid())
+  provider  String
+  eventType String
+  payload   String
+  status    String
+  orderId   String?
+  createdAt DateTime @default(now())
+}
