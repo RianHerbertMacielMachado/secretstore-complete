@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia Deploy — Railway + PostgreSQL</title>
+  <style>
+    :root {
+      --bg: #0f0f13;
+      --surface: #16161d;
+      --surface2: #1e1e28;
+      --border: #2a2a38;
+      --accent: #7c3aed;
+      --accent2: #a855f7;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --blue: #3b82f6;
+      --cyan: #06b6d4;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #1a0533 0%, #0f1a2e 50%, #0f0f13 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 24px 48px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(124,58,237,.15); border: 1px solid rgba(124,58,237,.3);
+      color: var(--accent2); border-radius: 99px; padding: 6px 16px;
+      font-size: .8rem; font-weight: 600; letter-spacing: .05em;
+      text-transform: uppercase; margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800; line-height: 1.2;
+      background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 16px;
+    }
+    .hero p { color: var(--muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto 32px; }
+    .badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .badge {
+      padding: 6px 14px; border-radius: 8px; font-size: .8rem; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .badge-green { background: rgba(34,197,94,.15); border: 1px solid rgba(34,197,94,.3); color: var(--green); }
+    .badge-blue  { background: rgba(59,130,246,.15); border: 1px solid rgba(59,130,246,.3); color: var(--blue); }
+    .badge-purple{ background: rgba(124,58,237,.15); border: 1px solid rgba(124,58,237,.3); color: var(--accent2); }
+    .badge-cyan  { background: rgba(6,182,212,.15);  border: 1px solid rgba(6,182,212,.3);  color: var(--cyan); }
+
+    /* ── Layout ── */
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    .content { padding: 48px 24px; }
+
+    /* ── TOC ── */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 48px;
+    }
+    .toc h2 { font-size: 1rem; color: var(--accent2); text-transform: uppercase;
+               letter-spacing: .08em; margin-bottom: 16px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--muted); text-decoration: none; font-size: .95rem; transition: color .2s; }
+    .toc a:hover { color: var(--accent2); }
+
+    /* ── Steps ── */
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 28px;
+      position: relative;
+    }
+    .step-header {
+      display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px;
+    }
+    .step-num {
+      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1rem; color: white;
+    }
+    .step-title h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+    .step-title p  { color: var(--muted); font-size: .9rem; }
+
+    /* ── Code ── */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+    .code-header {
+      background: #161b22;
+      padding: 8px 16px;
+      font-size: .75rem;
+      color: var(--muted);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .code-header .dot {
+      width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+    }
+    pre {
+      padding: 20px; overflow-x: auto; font-family: 'Fira Code', 'Cascadia Code', Consolas, monospace;
+      font-size: .85rem; line-height: 1.6; tab-size: 2;
+    }
+    code { color: #e6edf3; }
+    .c-keyword  { color: #ff7b72; }
+    .c-string   { color: #a5d6ff; }
+    .c-comment  { color: #8b949e; font-style: italic; }
+    .c-value    { color: #79c0ff; }
+    .c-key      { color: #d2a8ff; }
+
+    /* ── Alerts ── */
+    .alert {
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 16px 0;
+      display: flex;
+      gap: 12px;
+      font-size: .9rem;
+    }
+    .alert-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+    .alert-info    { background: rgba(59,130,246,.1);  border: 1px solid rgba(59,130,246,.25); }
+    .alert-warning { background: rgba(234,179,8,.1);   border: 1px solid rgba(234,179,8,.25); }
+    .alert-success { background: rgba(34,197,94,.1);   border: 1px solid rgba(34,197,94,.25); }
+    .alert-danger  { background: rgba(239,68,68,.1);   border: 1px solid rgba(239,68,68,.25); }
+    .alert-info    .alert-text { color: #93c5fd; }
+    .alert-warning .alert-text { color: #fde047; }
+    .alert-success .alert-text { color: #86efac; }
+    .alert-danger  .alert-text { color: #fca5a5; }
+
+    /* ── Table ── */
+    table {
+      width: 100%; border-collapse: collapse; margin: 16px 0; font-size: .9rem;
+    }
+    th {
+      background: var(--surface2); padding: 10px 14px; text-align: left;
+      font-size: .8rem; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--accent2); border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .td-key  { font-family: monospace; color: var(--cyan); font-size: .85rem; }
+    .td-req  { color: var(--red); font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+    .td-opt  { color: var(--muted); font-size: .75rem; }
+
+    /* ── Inline code ── */
+    .ic {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+      padding: 2px 7px; border-radius: 5px; font-family: monospace; font-size: .85em;
+      color: var(--cyan);
+    }
+
+    /* ── Checklist ── */
+    .checklist { list-style: none; margin: 16px 0; }
+    .checklist li {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      display: flex; align-items: flex-start; gap: 10px; font-size: .9rem;
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .check-icon { font-size: 1rem; margin-top: 1px; flex-shrink: 0; }
+
+    /* ── Arch diagram ── */
+    .arch {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .arch-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .arch-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: .85rem;
+      font-weight: 600;
+    }
+    .arch-arrow { color: var(--muted); font-size: 1.4rem; }
+    .arch-label { color: var(--muted); font-size: .75rem; margin-top: 4px; text-align: center; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--muted);
+      font-size: .85rem;
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+    footer a { color: var(--accent2); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .step { padding: 20px; }
+      .arch-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<div class="hero">
+  <div class="hero-badge">🚀 Guia Completo de Deploy</div>
+  <h1>Railway + PostgreSQL</h1>
+  <p>Deploy profissional do SecretStore na Railway com banco de dados PostgreSQL gerenciado — gratuito para começar.</p>
+  <div class="badges">
+    <span class="badge badge-purple">🟣 Railway</span>
+    <span class="badge badge-blue">🐘 PostgreSQL</span>
+    <span class="badge badge-cyan">⚡ Next.js 14</span>
+    <span class="badge badge-green">✅ Free Tier</span>
+  </div>
+</div>
+
+<div class="content">
+<div class="container">
+
+  <!-- ═══ VISÃO GERAL ═══ -->
+  <div class="arch">
+    <div style="color:var(--accent2);font-weight:700;margin-bottom:20px;font-size:1rem;">🏗️ Arquitetura no Railway</div>
+    <div class="arch-row">
+      <div class="arch-box" style="border-color:rgba(124,58,237,.4);">
+        🌐 Usuário<br/><div class="arch-label">Navegador</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box" style="border-color:rgba(6,182,212,.4);">
+        🚂 Railway<br/><div class="arch-label">Container Next.js</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box" style="border-color:rgba(59,130,246,.4);">
+        🐘 PostgreSQL<br/><div class="arch-label">Railway Managed DB</div>
+      </div>
+    </div>
+    <div style="color:var(--muted);font-size:.8rem;margin-top:8px;">
+      server.js (standalone) → Prisma ORM → PostgreSQL Railway interno
+    </div>
+  </div>
+
+  <!-- ═══ TOC ═══ -->
+  <div class="toc">
+    <h2>📋 Índice</h2>
+    <ol>
+      <li><a href="#s1">Criar conta no Railway</a></li>
+      <li><a href="#s2">Criar Projeto + Serviço PostgreSQL</a></li>
+      <li><a href="#s3">Conectar repositório GitHub</a></li>
+      <li><a href="#s4">Configurar variáveis de ambiente</a></li>
+      <li><a href="#s5">Verificar railway.json no repositório</a></li>
+      <li><a href="#s6">Aguardar o build e primeiro deploy</a></li>
+      <li><a href="#s7">Configurar domínio customizado (opcional)</a></li>
+      <li><a href="#s8">Pós-deploy: seed inicial de dados</a></li>
+      <li><a href="#s9">Limites do plano gratuito</a></li>
+      <li><a href="#s10">Problemas comuns e soluções</a></li>
+    </ol>
+  </div>
+
+  <!-- ═══ PASSO 1 ═══ -->
+  <div class="step" id="s1">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">
+        <h2>Criar conta no Railway</h2>
+        <p>Acesse o Railway e crie sua conta gratuita</p>
+      </div>
+    </div>
+
+    <ol style="margin-left:20px;margin-bottom:16px;">
+      <li style="margin-bottom:8px;">Acesse <strong><a href="https://railway.app" style="color:var(--accent2);" target="_blank">https://railway.app</a></strong></li>
+      <li style="margin-bottom:8px;">Clique em <strong>"Login"</strong> → selecione <strong>"GitHub"</strong></li>
+      <li style="margin-bottom:8px;">Autorize o Railway a acessar sua conta GitHub</li>
+      <li style="margin-bottom:8px;">Você terá <strong>$5 de crédito grátis/mês</strong> ou 500h no Hobby plan</li>
+    </ol>
+
+    <div class="alert alert-info">
+      <span class="alert-icon">ℹ️</span>
+      <div class="alert-text">
+        <strong>Plano Trial (gratuito):</strong> $5 de crédito por mês. Para uso contínuo, upgrade para o <strong>Hobby ($5/mês)</strong> que inclui PostgreSQL e Workers suficientes para uma loja pequena.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSO 2 ═══ -->
+  <div class="step" id="s2">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">
+        <h2>Criar Projeto + Serviço PostgreSQL</h2>
+        <p>Configure o banco de dados antes de conectar o app</p>
+      </div>
+    </div>
+
+    <ol style="margin-left:20px;margin-bottom:20px;">
+      <li style="margin-bottom:10px;">No dashboard Railway, clique em <strong>"New Project"</strong></li>
+      <li style="margin-bottom:10px;">Selecione <strong>"Provision PostgreSQL"</strong> (cria banco + projeto juntos)</li>
+      <li style="margin-bottom:10px;">O Railway cria automaticamente um serviço PostgreSQL com as variáveis de conexão</li>
+      <li style="margin-bottom:10px;">Clique no serviço PostgreSQL criado e vá na aba <strong>"Variables"</strong></li>
+      <li style="margin-bottom:10px;">Copie o valor de <span class="ic">DATABASE_URL</span> (vai ser usado depois)</li>
+    </ol>
+
+    <div class="alert alert-success">
+      <span class="alert-icon">✅</span>
+      <div class="alert-text">
+        O <span class="ic">DATABASE_URL</span> no formato <code>postgresql://postgres:senha@roundhouse.proxy.rlwy.net:PORT/railway</code> será gerado automaticamente. Você <strong>não precisa criar nada manualmente</strong> — o Railway gerencia tudo.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSO 3 ═══ -->
+  <div class="step" id="s3">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div class="step-title">
+        <h2>Conectar Repositório GitHub</h2>
+        <p>Adicionar o app Next.js ao projeto Railway</p>
+      </div>
+    </div>
+
+    <ol style="margin-left:20px;margin-bottom:20px;">
+      <li style="margin-bottom:10px;">No painel do projeto (que já tem o PostgreSQL), clique em <strong>"+ New Service"</strong></li>
+      <li style="margin-bottom:10px;">Selecione <strong>"GitHub Repo"</strong></li>
+      <li style="margin-bottom:10px;">Autorize o Railway a acessar seus repositórios se solicitado</li>
+      <li style="margin-bottom:10px;">Selecione o repositório <strong><code>secretstore-complete</code></strong></li>
+      <li style="margin-bottom:10px;">Branch: <strong><code>main</code></strong></li>
+      <li style="margin-bottom:10px;">Railway detectará automaticamente o <span class="ic">railway.json</span> na raiz do projeto</li>
+    </ol>
+
+    <div class="alert alert-warning">
+      <span class="alert-icon">⚠️</span>
+      <div class="alert-text">
+        <strong>Não inicie o deploy ainda!</strong> Adicione todas as variáveis de ambiente primeiro (próximo passo). Um deploy sem as variáveis corretas vai falhar.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSO 4 ═══ -->
+  <div class="step" id="s4">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div class="step-title">
+        <h2>Configurar Variáveis de Ambiente</h2>
+        <p>Todas as variáveis necessárias para o funcionamento</p>
+      </div>
+    </div>
+
+    <p style="margin-bottom:16px;">No serviço do Next.js, vá em <strong>"Variables"</strong> e adicione as seguintes variáveis:</p>
+
+    <div class="alert alert-info" style="margin-bottom:20px;">
+      <span class="alert-icon">💡</span>
+      <div class="alert-text">
+        Para o <span class="ic">DATABASE_URL</span>, use a referência Railway ao invés de copiar o valor:
+        escreva <strong><code>${{Postgres.DATABASE_URL}}</code></strong> — o Railway vai substituir automaticamente pelo valor real do serviço PostgreSQL no mesmo projeto.
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Variável</th>
+          <th>Valor / Descrição</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="td-key">DATABASE_URL</td>
+          <td><code>${{Postgres.DATABASE_URL}}</code> — referência ao PostgreSQL do projeto</td>
+          <td class="td-req">obrigatório</td>
+        </tr>
+        <tr>
+          <td class="td-key">NEXTAUTH_URL</td>
+          <td>URL do seu app — ex: <code>https://secretstore.railway.app</code></td>
+          <td class="td-req">obrigatório</td>
+        </tr>
+        <tr>
+          <td class="td-key">NEXTAUTH_SECRET</td>
+          <td>Chave aleatória — gere com <code>openssl rand -base64 32</code></td>
+          <td class="td-req">obrigatório</td>
+        </tr>
+        <tr>
+          <td class="td-key">NODE_ENV</td>
+          <td><code>production</code></td>
+          <td class="td-req">obrigatório</td>
+        </tr>
+        <tr>
+          <td class="td-key">PORT</td>
+          <td><code>3000</code></td>
+          <td class="td-req">obrigatório</td>
+        </tr>
+        <tr>
+          <td class="td-key">NEXT_PUBLIC_SITE_URL</td>
+          <td>Mesma URL que o NEXTAUTH_URL</td>
+          <td class="td-req">obrigatório</td>
+        </tr>
+        <tr>
+          <td class="td-key">NEXT_PUBLIC_SITE_NAME</td>
+          <td>Nome da loja — ex: <code>Secret Store</code></td>
+          <td class="td-req">obrigatório</td>
+        </tr>
+        <tr>
+          <td class="td-key">GOOGLE_CLIENT_ID</td>
+          <td>OAuth Google (console.developers.google.com)</td>
+          <td class="td-opt">opcional</td>
+        </tr>
+        <tr>
+          <td class="td-key">GOOGLE_CLIENT_SECRET</td>
+          <td>OAuth Google</td>
+          <td class="td-opt">opcional</td>
+        </tr>
+        <tr>
+          <td class="td-key">DISCORD_CLIENT_ID</td>
+          <td>OAuth Discord (discord.com/developers)</td>
+          <td class="td-opt">opcional</td>
+        </tr>
+        <tr>
+          <td class="td-key">DISCORD_CLIENT_SECRET</td>
+          <td>OAuth Discord</td>
+          <td class="td-opt">opcional</td>
+        </tr>
+        <tr>
+          <td class="td-key">MP_ACCESS_TOKEN</td>
+          <td>Mercado Pago — Token de acesso</td>
+          <td class="td-opt">para pagamentos</td>
+        </tr>
+        <tr>
+          <td class="td-key">MP_PUBLIC_KEY</td>
+          <td>Mercado Pago — Chave pública</td>
+          <td class="td-opt">para pagamentos</td>
+        </tr>
+        <tr>
+          <td class="td-key">MP_WEBHOOK_SECRET</td>
+          <td>Mercado Pago — Segredo do webhook</td>
+          <td class="td-opt">para pagamentos</td>
+        </tr>
+        <tr>
+          <td class="td-key">EMAIL_HOST</td>
+          <td><code>smtp.gmail.com</code></td>
+          <td class="td-opt">para emails</td>
+        </tr>
+        <tr>
+          <td class="td-key">EMAIL_PORT</td>
+          <td><code>587</code></td>
+          <td class="td-opt">para emails</td>
+        </tr>
+        <tr>
+          <td class="td-key">EMAIL_USER</td>
+          <td>Seu email Gmail</td>
+          <td class="td-opt">para emails</td>
+        </tr>
+        <tr>
+          <td class="td-key">EMAIL_PASS</td>
+          <td>Senha de app Gmail (não a senha normal)</td>
+          <td class="td-opt">para emails</td>
+        </tr>
+        <tr>
+          <td class="td-key">CLOUDINARY_CLOUD_NAME</td>
+          <td>Cloudinary — para upload de imagens</td>
+          <td class="td-opt">para imagens</td>
+        </tr>
+        <tr>
+          <td class="td-key">CLOUDINARY_API_KEY</td>
+          <td>Cloudinary API Key</td>
+          <td class="td-opt">para imagens</td>
+        </tr>
+        <tr>
+          <td class="td-key">CLOUDINARY_API_SECRET</td>
+          <td>Cloudinary API Secret</td>
+          <td class="td-opt">para imagens</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="code-block">
+      <div class="code-header"><span class="dot" style="background:#ff5f57"></span> Como gerar o NEXTAUTH_SECRET</div>
+      <pre><code><span class="c-comment"># No terminal do seu computador:</span>
+openssl rand -base64 32
+
+<span class="c-comment"># Exemplo de output:</span>
+<span class="c-string">K7mP2nL9xQ4wR8vY1dA6tE3cB0uJ5sM7fH2oN4pW9k=</span></code></pre>
+    </div>
+  </div>
+
+  <!-- ═══ PASSO 5 ═══ -->
+  <div class="step" id="s5">
+    <div class="step-header">
+      <div class="step-num">5</div>
+      <div class="step-title">
+        <h2>Verificar railway.json no Repositório</h2>
+        <p>O arquivo já está no seu repositório GitHub</p>
+      </div>
+    </div>
+
+    <p style="margin-bottom:16px;">O arquivo <span class="ic">railway.json</span> já foi criado e enviado para o GitHub. Ele instrui o Railway como fazer o build e start da aplicação:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="dot" style="background:#ffd60a"></span> railway.json</div>
+      <pre><code>{
+  <span class="c-key">"$schema"</span>: <span class="c-string">"https://railway.app/railway.schema.json"</span>,
+  <span class="c-key">"build"</span>: {
+    <span class="c-key">"builder"</span>: <span class="c-string">"NIXPACKS"</span>,
+    <span class="c-key">"buildCommand"</span>: <span class="c-string">"npm install --legacy-peer-deps && npx prisma generate && npm run build"</span>
+  },
+  <span class="c-key">"deploy"</span>: {
+    <span class="c-key">"startCommand"</span>: <span class="c-string">"npx prisma migrate deploy && node .next/standalone/server.js"</span>,
+    <span class="c-key">"restartPolicyType"</span>: <span class="c-string">"ON_FAILURE"</span>,
+    <span class="c-key">"restartPolicyMaxRetries"</span>: 3
+  }
+}</code></pre>
+    </div>
+
+    <div class="alert alert-info">
+      <span class="alert-icon">🔍</span>
+      <div class="alert-text">
+        <strong>O que cada comando faz:</strong><br/>
+        • <span class="ic">npx prisma generate</span> — gera o Prisma Client com as tipagens<br/>
+        • <span class="ic">npm run build</span> — compila o Next.js com <code>output: 'standalone'</code><br/>
+        • <span class="ic">npx prisma migrate deploy</span> — aplica as migrations no PostgreSQL (executa no start)<br/>
+        • <span class="ic">node .next/standalone/server.js</span> — inicia o servidor Next.js otimizado
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSO 6 ═══ -->
+  <div class="step" id="s6">
+    <div class="step-header">
+      <div class="step-num">6</div>
+      <div class="step-title">
+        <h2>Aguardar o Build e Primeiro Deploy</h2>
+        <p>Railway constrói e publica automaticamente</p>
+      </div>
+    </div>
+
+    <ol style="margin-left:20px;margin-bottom:20px;">
+      <li style="margin-bottom:10px;">Após configurar as variáveis, vá em <strong>"Deploy"</strong> ou aguarde o trigger automático</li>
+      <li style="margin-bottom:10px;">Clique no deploy em execução para ver os logs em tempo real</li>
+      <li style="margin-bottom:10px;">O build leva ~3-5 minutos na primeira vez</li>
+      <li style="margin-bottom:10px;">Ao finalizar, o Railway exibe um domínio como <code>secretstore-production.railway.app</code></li>
+    </ol>
+
+    <div class="code-block">
+      <div class="code-header"><span class="dot" style="background:#57ff57"></span> Log de build esperado</div>
+      <pre><code><span class="c-comment">── Build Phase ──────────────────────────────────</span>
+<span class="c-string">✓ npm install --legacy-peer-deps</span>
+<span class="c-string">✓ npx prisma generate</span>
+<span class="c-string">✓ npm run build</span>
+  <span class="c-value">▲ Next.js 14.2.29</span>
+  <span class="c-value">✓ Compiled successfully</span>
+  <span class="c-value">✓ Generating static pages (33/33)</span>
+  <span class="c-value">✓ Collecting build traces</span>
+
+<span class="c-comment">── Deploy Phase ─────────────────────────────────</span>
+<span class="c-string">✓ npx prisma migrate deploy</span>
+  <span class="c-value">Applied 1 migration (20260606200000_init_postgresql)</span>
+<span class="c-string">✓ node .next/standalone/server.js</span>
+  <span class="c-value">Ready on http://0.0.0.0:3000</span>
+
+<span class="c-comment">── Status: ACTIVE ───────────────────────────────</span></code></pre>
+    </div>
+
+    <div class="alert alert-success">
+      <span class="alert-icon">🎉</span>
+      <div class="alert-text">
+        Quando ver <strong>"Deployment successful"</strong>, acesse a URL gerada pelo Railway. Você verá a loja em funcionamento com o banco PostgreSQL configurado e todas as tabelas criadas automaticamente!
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSO 7 ═══ -->
+  <div class="step" id="s7">
+    <div class="step-header">
+      <div class="step-num">7</div>
+      <div class="step-title">
+        <h2>Configurar Domínio Customizado (Opcional)</h2>
+        <p>Use seu próprio domínio em vez do .railway.app</p>
+      </div>
+    </div>
+
+    <ol style="margin-left:20px;margin-bottom:20px;">
+      <li style="margin-bottom:10px;">No serviço Next.js, vá na aba <strong>"Settings"</strong></li>
+      <li style="margin-bottom:10px;">Em <strong>"Networking"</strong>, clique em <strong>"+ Custom Domain"</strong></li>
+      <li style="margin-bottom:10px;">Digite seu domínio, ex: <code>secretstore.com.br</code></li>
+      <li style="margin-bottom:10px;">Railway mostrará o registro <strong>CNAME</strong> para configurar no seu DNS</li>
+      <li style="margin-bottom:10px;">No painel do seu registrador de domínio (Registro.br, GoDaddy, etc.), adicione o CNAME</li>
+      <li style="margin-bottom:10px;">Aguarde a propagação DNS (até 24h)</li>
+    </ol>
+
+    <div class="alert alert-warning">
+      <span class="alert-icon">⚠️</span>
+      <div class="alert-text">
+        Após configurar o domínio customizado, <strong>atualize as variáveis</strong>:<br/>
+        • <span class="ic">NEXTAUTH_URL</span> → <code>https://seudominio.com.br</code><br/>
+        • <span class="ic">NEXT_PUBLIC_SITE_URL</span> → <code>https://seudominio.com.br</code><br/>
+        Isso dispara um novo deploy automaticamente.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSO 8 ═══ -->
+  <div class="step" id="s8">
+    <div class="step-header">
+      <div class="step-num">8</div>
+      <div class="step-title">
+        <h2>Pós-Deploy: Criar Admin e Dados Iniciais</h2>
+        <p>Configure o primeiro usuário administrador</p>
+      </div>
+    </div>
+
+    <p style="margin-bottom:16px;">Com o banco vazio, crie o primeiro usuário admin diretamente pelo Railway CLI ou via interface:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#ffd60a"></span><span class="dot" style="background:#57ff57"></span> Opção A — Railway CLI (recomendado)</div>
+      <pre><code><span class="c-comment"># Instalar Railway CLI</span>
+npm install -g @railway/cli
+
+<span class="c-comment"># Autenticar</span>
+railway login
+
+<span class="c-comment"># Executar comando SQL no PostgreSQL do projeto</span>
+railway run npx prisma db seed
+
+<span class="c-comment"># Ou via psql direto:</span>
+railway connect PostgreSQL</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="dot" style="background:#ffd60a"></span> Opção B — Pela interface web do Railway</div>
+      <pre><code><span class="c-comment"># 1. Vá em seu serviço PostgreSQL no Railway</span>
+<span class="c-comment"># 2. Clique na aba "Query" ou "Data"</span>
+<span class="c-comment"># 3. Execute o SQL para criar o primeiro admin:</span>
+
+INSERT INTO <span class="c-string">"User"</span> (id, name, email, password, role, <span class="c-string">"createdAt"</span>, <span class="c-string">"updatedAt"</span>)
+VALUES (
+  gen_random_uuid()::text,
+  <span class="c-string">'Admin'</span>,
+  <span class="c-string">'admin@seusite.com.br'</span>,
+  <span class="c-comment">-- Hash bcrypt da senha 'admin123' (troque após o primeiro login!)</span>
+  <span class="c-string">'$2b$10$rQZ8K1mN3pL7vX9wY2tU4eB6cD0oJ5sM8fH1nA3kE9qR7iG5aW4zO'</span>,
+  <span class="c-string">'ADMIN'</span>,
+  NOW(), NOW()
+);</code></pre>
+    </div>
+
+    <div class="alert alert-danger">
+      <span class="alert-icon">🔐</span>
+      <div class="alert-text">
+        <strong>Segurança importante:</strong> Use o registro normal pelo site (rota <span class="ic">/auth/register</span>) e depois atualize o <span class="ic">role</span> para <code>'ADMIN'</code> via SQL. Nunca coloque uma senha em texto plain no banco.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSO 9 ═══ -->
+  <div class="step" id="s9">
+    <div class="step-header">
+      <div class="step-num">9</div>
+      <div class="step-title">
+        <h2>Limites do Plano Gratuito Railway</h2>
+        <p>Entenda o que está incluído no Trial e no Hobby</p>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Recurso</th><th>Trial (grátis)</th><th>Hobby ($5/mês)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Créditos</td><td>$5 de crédito total</td><td>$5/mês incluído</td></tr>
+        <tr><td>RAM por serviço</td><td>512 MB</td><td>8 GB máx</td></tr>
+        <tr><td>CPU</td><td>0.5 vCPU</td><td>8 vCPU máx</td></tr>
+        <tr><td>Projetos</td><td>1 projeto</td><td>Ilimitados</td></tr>
+        <tr><td>PostgreSQL</td><td>Incluído</td><td>Incluído</td></tr>
+        <tr><td>Domínio custom</td><td>Não</td><td>Sim</td></tr>
+        <tr><td>Sleep automático</td><td>Após 30 dias inativo</td><td>Não</td></tr>
+        <tr><td>Custo estimado loja pequena</td><td colspan="2">~$1-3/mês</td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert alert-info">
+      <span class="alert-icon">💰</span>
+      <div class="alert-text">
+        O plano Trial dura até você usar $5 de crédito. Para uma loja pequena, isso pode durar semanas. O <strong>Hobby ($5/mês)</strong> é ideal para produção — os $5 incluídos cobrem a maior parte do custo mensal de uma loja pequena.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSO 10 ═══ -->
+  <div class="step" id="s10">
+    <div class="step-header">
+      <div class="step-num">10</div>
+      <div class="step-title">
+        <h2>Problemas Comuns e Soluções</h2>
+        <p>Erros frequentes no deploy Railway + Next.js</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <div style="color:var(--red);font-weight:700;margin-bottom:8px;">❌ Erro: "P1001: Can't reach database"</div>
+      <div class="alert alert-warning">
+        <span class="alert-icon">🔧</span>
+        <div class="alert-text">
+          Verifique se a variável <span class="ic">DATABASE_URL</span> aponta para <span class="ic">${{Postgres.DATABASE_URL}}</span> e não para um valor copiado manualmente. O Railway usa referências internas para comunicação entre serviços.
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <div style="color:var(--red);font-weight:700;margin-bottom:8px;">❌ Erro: "Cannot find module '.next/standalone/server.js'"</div>
+      <div class="alert alert-warning">
+        <span class="alert-icon">🔧</span>
+        <div class="alert-text">
+          O build falhou antes de gerar o standalone. Verifique os logs de build. Certifique-se que o <span class="ic">next.config.js</span> tem <code>output: 'standalone'</code> descomentado.
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <div style="color:var(--red);font-weight:700;margin-bottom:8px;">❌ Erro: "Migration failed" no start</div>
+      <div class="alert alert-warning">
+        <span class="alert-icon">🔧</span>
+        <div class="alert-text">
+          A migration tenta rodar antes do banco estar pronto. O Railway normalmente resolve isso com retry automático (<span class="ic">restartPolicyType: "ON_FAILURE"</span>). Se persistir, verifique se o serviço PostgreSQL está <strong>Running</strong> antes de fazer o deploy do app.
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <div style="color:var(--red);font-weight:700;margin-bottom:8px;">❌ Erro: "NEXTAUTH_URL mismatch"</div>
+      <div class="alert alert-warning">
+        <span class="alert-icon">🔧</span>
+        <div class="alert-text">
+          O <span class="ic">NEXTAUTH_URL</span> deve ser exatamente a URL pública do app (com HTTPS e sem barra final). Se mudou o domínio, atualize a variável e faça redeploy. Também atualize nas configurações OAuth do Google/Discord.
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <div style="color:var(--yellow);font-weight:700;margin-bottom:8px;">⚠️ Fonts/imagens 404 em produção</div>
+      <div class="alert alert-info">
+        <span class="alert-icon">🔧</span>
+        <div class="alert-text">
+          O build standalone copia automaticamente os arquivos estáticos. Se ocorrer, verifique se os arquivos estão em <span class="ic">public/</span> no repositório e se foram commitados.
+        </div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="dot" style="background:#57ff57"></span> Como verificar logs em produção via Railway CLI</div>
+      <pre><code><span class="c-comment"># Instalar CLI</span>
+npm i -g @railway/cli
+
+<span class="c-comment"># Login e vincular projeto</span>
+railway login
+railway link
+
+<span class="c-comment"># Ver logs em tempo real</span>
+railway logs
+
+<span class="c-comment"># Executar comando no ambiente de produção</span>
+railway run npx prisma studio</code></pre>
+    </div>
+  </div>
+
+  <!-- ═══ CHECKLIST FINAL ═══ -->
+  <div class="step" style="border-color:rgba(34,197,94,.3);">
+    <div class="step-header">
+      <div class="step-num" style="background:linear-gradient(135deg,#16a34a,#22c55e);">✓</div>
+      <div class="step-title">
+        <h2>Checklist Final de Deploy</h2>
+        <p>Verifique tudo antes de considerar o deploy concluído</p>
+      </div>
+    </div>
+    <ul class="checklist">
+      <li><span class="check-icon">☐</span> Conta Railway criada e vinculada ao GitHub</li>
+      <li><span class="check-icon">☐</span> Serviço PostgreSQL criado e Running</li>
+      <li><span class="check-icon">☐</span> Repositório <code>secretstore-complete</code> conectado</li>
+      <li><span class="check-icon">☐</span> <span class="ic">DATABASE_URL</span> apontando para <code>${{Postgres.DATABASE_URL}}</code></li>
+      <li><span class="check-icon">☐</span> <span class="ic">NEXTAUTH_URL</span> configurado com a URL pública</li>
+      <li><span class="check-icon">☐</span> <span class="ic">NEXTAUTH_SECRET</span> gerado com 32+ chars aleatórios</li>
+      <li><span class="check-icon">☐</span> <span class="ic">NODE_ENV=production</span> e <span class="ic">PORT=3000</span></li>
+      <li><span class="check-icon">☐</span> Build completado sem erros críticos</li>
+      <li><span class="check-icon">☐</span> Migration <code>20260606200000_init_postgresql</code> aplicada</li>
+      <li><span class="check-icon">☐</span> Loja acessível na URL pública</li>
+      <li><span class="check-icon">☐</span> Primeiro usuário admin criado</li>
+      <li><span class="check-icon">☐</span> Painel admin acessível em <code>/admin</code></li>
+      <li><span class="check-icon">☐</span> Domínio customizado configurado (se aplicável)</li>
+    </ul>
+  </div>
+
+</div><!-- /container -->
+</div><!-- /content -->
+
+<footer>
+  <div class="container">
+    <p>SecretStore · Deploy Guide · Railway + PostgreSQL</p>
+    <p style="margin-top:8px;">
+      <a href="https://railway.app/docs" target="_blank">Docs Railway</a> ·
+      <a href="https://www.prisma.io/docs/guides/migrate/production-troubleshooting" target="_blank">Prisma Migrations</a> ·
+      <a href="https://nextjs.org/docs/app/api-reference/next-config-js/output" target="_blank">Next.js Standalone</a>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
