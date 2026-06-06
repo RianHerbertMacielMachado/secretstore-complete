@@ -2,14 +2,11 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  // Em produção (Vercel) usa Turso via adapter no lib/prisma.ts
-  // Em desenvolvimento local continua usando SQLite local
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

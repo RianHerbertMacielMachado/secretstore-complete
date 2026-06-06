@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import AdminConfiguracoesClient from '@/components/admin/AdminConfiguracoesClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminConfiguracoesPage() {
   const configs = await prisma.siteConfig.findMany()
   const configMap = Object.fromEntries(configs.map((c) => [c.key, c.value]))

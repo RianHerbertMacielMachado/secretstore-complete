@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import GuiaConfiguracaoClient from '@/components/guia/GuiaConfiguracaoClient'
 
+export const dynamic = 'force-dynamic'
+
 async function getConfigStatus() {
   const configs = await prisma.siteConfig.findMany()
   const configMap = Object.fromEntries(configs.map((c) => [c.key, c.value]))

@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import AdminPedidosClient from '@/components/admin/AdminPedidosClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminPedidosPage() {
   const orders = await prisma.order.findMany({
     include: {

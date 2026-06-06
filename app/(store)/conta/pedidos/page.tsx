@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth/auth-options'
 import { prisma } from '@/lib/prisma'
 import ContaClient from '@/components/store/ContaClient'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = { title: 'Meus Pedidos | DarkShop' }
 
 export default async function MeusPedidosPage() {

@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import CategoriasClient from '@/components/store/CategoriasClient'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Categorias | DarkShop',
   description: 'Explore nossas categorias de produtos digitais',

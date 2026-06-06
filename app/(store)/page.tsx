@@ -3,6 +3,8 @@ import HeroSection from '@/components/store/HeroSection'
 import FeaturedProducts from '@/components/store/FeaturedProducts'
 import CategoriesSection from '@/components/store/CategoriesSection'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const [products, categories, configs] = await Promise.all([
     prisma.product.findMany({

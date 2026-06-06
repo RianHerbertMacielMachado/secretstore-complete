@@ -6,12 +6,18 @@ interface Props {
   params: { slug: string }
 }
 
+export const dynamicParams = true
+
 export async function generateStaticParams() {
-  const categories = await prisma.category.findMany({
-    where: { isVisible: true },
-    select: { slug: true },
-  })
-  return categories.map((c) => ({ slug: c.slug }))
+  try {
+    const categories = await prisma.category.findMany({
+      where: { isVisible: true },
+      select: { slug: true },
+    })
+    return categories.map((c) => ({ slug: c.slug }))
+  } catch {
+    return []
+  }
 }
 
 export default async function CategoriaSlugPage({ params }: Props) {

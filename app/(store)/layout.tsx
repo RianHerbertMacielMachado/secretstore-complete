@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import LayoutThemeApplier from '@/components/layouts/LayoutThemeApplier'
 import StoreLayout from '@/components/layouts/StoreLayout'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata(): Promise<Metadata> {
   const configs = await prisma.siteConfig.findMany({
     where: { key: { in: ['store_name', 'site_name', 'site_description'] } },

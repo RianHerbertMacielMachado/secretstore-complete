@@ -1,17 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'standalone' — usado apenas para deploy em VPS/Hostgator
-  // No Vercel NÃO usar standalone (o Vercel gerencia o build automaticamente)
-  // Descomente a linha abaixo SOMENTE se for fazer deploy em VPS:
-  // output: 'standalone',
+  // output: 'standalone' — necessário para Railway (container Docker)
+  // O Railway usa o servidor Node.js gerado em .next/standalone/server.js
+  output: 'standalone',
 
   experimental: {
     serverComponentsExternalPackages: [
       '@prisma/client',
       'prisma',
       'nodemailer',
-      '@libsql/client',
-      '@prisma/adapter-libsql',
     ],
   },
 

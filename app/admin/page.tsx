@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import AdminDashboardClient from '@/components/admin/AdminDashboardClient'
 
+export const dynamic = 'force-dynamic'
+
 async function getDashboardData() {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)

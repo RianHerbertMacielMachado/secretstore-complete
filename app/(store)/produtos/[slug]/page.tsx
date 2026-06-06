@@ -7,12 +7,18 @@ interface Props {
   params: { slug: string }
 }
 
+export const dynamicParams = true
+
 export async function generateStaticParams() {
-  const products = await prisma.product.findMany({
-    where: { status: 'ACTIVE' },
-    select: { slug: true },
-  })
-  return products.map((p) => ({ slug: p.slug }))
+  try {
+    const products = await prisma.product.findMany({
+      where: { status: 'ACTIVE' },
+      select: { slug: true },
+    })
+    return products.map((p) => ({ slug: p.slug }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
