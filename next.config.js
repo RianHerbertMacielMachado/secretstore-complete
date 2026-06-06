@@ -1,8 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // ============================================================
+  // OUTPUT STANDALONE — necessário para deploy em VPS/Hostgator
+  // Gera pasta .next/standalone com tudo necessário para rodar
+  // sem precisar de node_modules completo no servidor
+  // ============================================================
+  output: 'standalone',
+
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', 'prisma', 'nodemailer'],
   },
+
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
@@ -15,9 +23,9 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.googleusercontent.com' },
     ],
   },
+
   async headers() {
     return [
-      // Security headers para toda a aplicação
       {
         source: '/(.*)',
         headers: [
@@ -28,7 +36,6 @@ const nextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
-      // CORS para API routes
       {
         source: '/api/webhooks/:path*',
         headers: [
@@ -45,7 +52,6 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
         ],
       },
-      // Cache para assets estáticos
       {
         source: '/static/:path*',
         headers: [
@@ -54,9 +60,9 @@ const nextConfig = {
       },
     ]
   },
+
   async rewrites() {
     return [
-      // Alias amigável para webhooks
       { source: '/webhooks/mp', destination: '/api/webhooks/mercadopago' },
       { source: '/webhooks/paypal', destination: '/api/webhooks/paypal' },
       { source: '/webhooks/picpay', destination: '/api/webhooks/picpay' },
