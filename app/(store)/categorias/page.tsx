@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma'
-import StoreLayout from '@/components/layouts/StoreLayout'
 import CategoriasClient from '@/components/store/CategoriasClient'
 
 export const metadata = {
@@ -17,8 +16,8 @@ export default async function CategoriasPage() {
   })
 
   return (
-    <StoreLayout>
+    <>
       <CategoriasClient categories={categories} />
-    </StoreLayout>
+    </>
   )
 }

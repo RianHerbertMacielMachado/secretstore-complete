@@ -1,6 +1,5 @@
 'use client'
 
-import StoreLayout from '@/components/layouts/StoreLayout'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { motion } from 'framer-motion'
@@ -49,7 +48,7 @@ function PedidoContent({ params }: { params: { id: string } }) {
   const info = instructions[method] || instructions.PIX
 
   return (
-    <StoreLayout>
+    <>
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -95,7 +94,7 @@ function PedidoContent({ params }: { params: { id: string } }) {
           </div>
         </motion.div>
       </div>
-    </StoreLayout>
+    </>
   )
 }
 

@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma'
-import StoreLayout from '@/components/layouts/StoreLayout'
 import ProdutosClient from '@/components/store/ProdutosClient'
 
 export const metadata = {
@@ -45,7 +44,7 @@ export default async function ProdutosPage({ searchParams }: Props) {
   ])
 
   return (
-    <StoreLayout>
+    <>
       <ProdutosClient
         products={products.map((p) => ({ ...p, images: JSON.parse(p.images || '[]') }))}
         categories={categories}
@@ -53,6 +52,6 @@ export default async function ProdutosPage({ searchParams }: Props) {
         searchQuery={busca || ''}
         sortOrder={ordem || 'recentes'}
       />
-    </StoreLayout>
+    </>
   )
 }

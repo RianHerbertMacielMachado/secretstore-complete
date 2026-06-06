@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth/auth-options'
 import { prisma } from '@/lib/prisma'
-import StoreLayout from '@/components/layouts/StoreLayout'
 import ContaClient from '@/components/store/ContaClient'
 
 export const metadata = { title: 'Minha Conta | DarkShop' }
@@ -25,7 +24,7 @@ export default async function ContaPage() {
   if (!user) redirect('/auth/login')
 
   return (
-    <StoreLayout>
+    <>
       <ContaClient
         user={{
           id: user.id,
@@ -51,6 +50,6 @@ export default async function ContaPage() {
           })),
         }))}
       />
-    </StoreLayout>
+    </>
   )
 }

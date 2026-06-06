@@ -2,7 +2,6 @@ import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import ProductDetailClient from '@/components/store/ProductDetailClient'
-import StoreLayout from '@/components/layouts/StoreLayout'
 
 interface Props {
   params: { slug: string }
@@ -58,11 +57,11 @@ export default async function ProductPage({ params }: Props) {
   })
 
   return (
-    <StoreLayout>
+    <>
       <ProductDetailClient
         product={{ ...product, images: JSON.parse(product.images || '[]') }}
         related={related.map(r => ({ ...r, images: JSON.parse(r.images || '[]') }))}
       />
-    </StoreLayout>
+    </>
   )
 }

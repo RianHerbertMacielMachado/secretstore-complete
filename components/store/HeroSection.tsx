@@ -3,7 +3,20 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  storeName?: string
+  storeSubtitle?: string
+}
+
+export default function HeroSection({
+  storeName = 'DarkShop',
+  storeSubtitle = 'Produtos digitais com estética gótica e entrega imediata',
+}: HeroSectionProps) {
+  // Divide o nome em duas partes visuais: primeira metade branca, segunda neon-pink
+  const mid = Math.ceil(storeName.length / 2)
+  const namePart1 = storeName.slice(0, mid).toUpperCase()
+  const namePart2 = storeName.slice(mid).toUpperCase()
+
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Background com efeito graffiti */}
@@ -56,26 +69,25 @@ export default function HeroSection() {
             Produtos Digitais Premium
           </motion.div>
 
-          {/* Título principal */}
+          {/* Título principal — dinâmico */}
           <h1 className="font-gothic text-5xl sm:text-7xl lg:text-8xl font-black text-white mb-6 leading-tight tracking-tight">
-            <span className="block">DARK</span>
-            <span className="block text-neon-pink text-neon-glow" style={{
-              textShadow: '0 0 30px #ff007f, 0 0 60px #ff007f40'
-            }}>
-              SHOP
+            <span className="block">{namePart1}</span>
+            <span
+              className="block text-neon-pink text-neon-glow"
+              style={{ textShadow: '0 0 30px #ff007f, 0 0 60px #ff007f40' }}
+            >
+              {namePart2}
             </span>
           </h1>
 
-          {/* Subtítulo */}
+          {/* Subtítulo — dinâmico, vindo do banco */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
             className="text-xl sm:text-2xl text-white/60 mb-10 max-w-2xl mx-auto font-light"
           >
-            Produtos digitais com estética{' '}
-            <span className="text-neon-light italic">gótica</span> e entrega{' '}
-            <span className="text-neon-light italic">imediata</span>
+            {storeSubtitle}
           </motion.p>
 
           {/* CTAs */}

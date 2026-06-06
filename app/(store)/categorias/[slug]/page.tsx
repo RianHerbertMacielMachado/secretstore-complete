@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
-import StoreLayout from '@/components/layouts/StoreLayout'
 import ProdutosClient from '@/components/store/ProdutosClient'
 
 interface Props {
@@ -35,7 +34,7 @@ export default async function CategoriaSlugPage({ params }: Props) {
   })
 
   return (
-    <StoreLayout>
+    <>
       <ProdutosClient
         products={category.products.map((p) => ({ ...p, images: JSON.parse(p.images || '[]') }))}
         categories={allCategories}
@@ -43,6 +42,6 @@ export default async function CategoriaSlugPage({ params }: Props) {
         searchQuery=""
         sortOrder="recentes"
       />
-    </StoreLayout>
+    </>
   )
 }

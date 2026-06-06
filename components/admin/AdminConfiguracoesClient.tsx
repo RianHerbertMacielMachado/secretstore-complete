@@ -59,7 +59,8 @@ function WebhookRow({ label, url }: { label: string; url: string }) {
 
 export default function AdminConfiguracoesClient({ configMap, envStatus, webhookBase }: Props) {
   const [siteForm, setSiteForm] = useState({
-    site_name: configMap.site_name || 'DarkShop',
+    store_name: configMap.store_name || configMap.site_name || 'DarkShop',
+    store_subtitle: configMap.store_subtitle || 'Produtos digitais com estética gótica e entrega imediata',
     site_description: configMap.site_description || '',
   })
   const [isSaving, setIsSaving] = useState(false)
@@ -74,7 +75,7 @@ export default function AdminConfiguracoesClient({ configMap, envStatus, webhook
           body: JSON.stringify({ key, value }),
         })
       }
-      toast.success('Configurações salvas!')
+      toast.success('Configurações salvas! Recarregue a loja para ver as mudanças.')
     } catch {
       toast.error('Erro ao salvar')
     } finally {
@@ -107,17 +108,36 @@ export default function AdminConfiguracoesClient({ configMap, envStatus, webhook
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs text-white/50 mb-1.5">Nome da Loja</label>
+            <label className="block text-xs text-white/50 mb-1.5">
+              Nome da Loja
+              <span className="ml-2 text-neon-pink/60">— aparece na navbar, hero e footer</span>
+            </label>
             <input
               type="text"
-              value={siteForm.site_name}
-              onChange={(e) => setSiteForm({ ...siteForm, site_name: e.target.value })}
+              value={siteForm.store_name}
+              onChange={(e) => setSiteForm({ ...siteForm, store_name: e.target.value })}
               className="input-dark"
               placeholder="DarkShop"
             />
           </div>
           <div>
-            <label className="block text-xs text-white/50 mb-1.5">Descrição</label>
+            <label className="block text-xs text-white/50 mb-1.5">
+              Subtítulo do Hero
+              <span className="ml-2 text-neon-pink/60">— frase de destaque na página inicial</span>
+            </label>
+            <input
+              type="text"
+              value={siteForm.store_subtitle}
+              onChange={(e) => setSiteForm({ ...siteForm, store_subtitle: e.target.value })}
+              className="input-dark"
+              placeholder="Produtos digitais com estética gótica e entrega imediata"
+            />
+            <p className="text-xs text-white/30 mt-1">
+              Dica: palavras em itálico são aplicadas automaticamente nas palavras em destaque do subtítulo
+            </p>
+          </div>
+          <div>
+            <label className="block text-xs text-white/50 mb-1.5">Descrição do Site (SEO)</label>
             <textarea
               value={siteForm.site_description}
               onChange={(e) => setSiteForm({ ...siteForm, site_description: e.target.value })}

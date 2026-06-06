@@ -1,6 +1,14 @@
 import Link from 'next/link'
 
-export default function StoreFooter() {
+interface StoreFooterProps {
+  storeName?: string
+}
+
+export default function StoreFooter({ storeName = 'DarkShop' }: StoreFooterProps) {
+  const mid = Math.ceil(storeName.length / 2)
+  const namePart1 = storeName.slice(0, mid).toUpperCase()
+  const namePart2 = storeName.slice(mid).toUpperCase()
+
   return (
     <footer className="border-t border-white/10 bg-black/80 py-12 mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -10,7 +18,7 @@ export default function StoreFooter() {
             <Link href="/" className="flex items-center gap-2 mb-4">
               <span className="text-2xl text-neon-pink">✝</span>
               <span className="font-gothic text-xl font-bold text-white">
-                DARK<span className="text-neon-pink">SHOP</span>
+                {namePart1}<span className="text-neon-pink">{namePart2}</span>
               </span>
             </Link>
             <p className="text-white/50 text-sm leading-relaxed max-w-xs">
@@ -62,7 +70,7 @@ export default function StoreFooter() {
         {/* Bottom */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-white/30 text-sm">
-            © {new Date().getFullYear()} DarkShop. Todos os direitos reservados.
+            © {new Date().getFullYear()} {storeName}. Todos os direitos reservados.
           </p>
           <div className="flex items-center gap-2 text-white/30 text-sm">
             <span>Pagamentos seguros via</span>

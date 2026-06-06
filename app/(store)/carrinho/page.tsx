@@ -1,6 +1,5 @@
 'use client'
 
-import StoreLayout from '@/components/layouts/StoreLayout'
 import { useCartStore } from '@/stores/cartStore'
 import { formatCurrency } from '@/lib/utils/helpers'
 import { Trash2, ShoppingBag, Tag, ArrowRight } from 'lucide-react'
@@ -36,7 +35,7 @@ export default function CarrinhoPage() {
   const total = getTotal()
 
   return (
-    <StoreLayout>
+    <>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="font-gothic text-3xl font-bold text-white mb-8">
           Carrinho <span className="text-neon-pink">({items.length})</span>
@@ -148,6 +147,6 @@ export default function CarrinhoPage() {
           </div>
         )}
       </div>
-    </StoreLayout>
+    </>
   )
 }

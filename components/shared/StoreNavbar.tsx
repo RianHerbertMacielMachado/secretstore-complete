@@ -6,10 +6,19 @@ import { useState } from 'react'
 import { ShoppingCart, User, Menu, X, Search, Heart } from 'lucide-react'
 import { useCartStore } from '@/stores/cartStore'
 
-export default function StoreNavbar() {
+interface StoreNavbarProps {
+  storeName?: string
+}
+
+export default function StoreNavbar({ storeName = 'DarkShop' }: StoreNavbarProps) {
   const { data: session } = useSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const cartCount = useCartStore((s) => s.items.reduce((acc, i) => acc + i.quantity, 0))
+
+  // Divide o nome em duas partes para aplicar o estilo neon na segunda metade
+  const mid = Math.ceil(storeName.length / 2)
+  const namePart1 = storeName.slice(0, mid).toUpperCase()
+  const namePart2 = storeName.slice(mid).toUpperCase()
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 backdrop-blur-md"
@@ -20,7 +29,7 @@ export default function StoreNavbar() {
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl text-neon-pink" style={{filter:'drop-shadow(0 0 8px #ff007f)'}}>✝</span>
             <span className="font-gothic text-xl font-bold text-white text-neon-glow tracking-wider">
-              DARK<span className="text-neon-pink">SHOP</span>
+              {namePart1}<span className="text-neon-pink">{namePart2}</span>
             </span>
           </Link>
 

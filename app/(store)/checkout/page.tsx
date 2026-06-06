@@ -1,6 +1,5 @@
 'use client'
 
-import StoreLayout from '@/components/layouts/StoreLayout'
 import { useCartStore } from '@/stores/cartStore'
 import { formatCurrency } from '@/lib/utils/helpers'
 import { useSession } from 'next-auth/react'
@@ -67,19 +66,19 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <StoreLayout>
+      <>
         <div className="max-w-2xl mx-auto px-4 py-24 text-center">
           <p className="text-white/40 mb-4">Seu carrinho está vazio</p>
           <Link href="/produtos" className="btn-neon-solid px-8 py-3 inline-block rounded-xl">
             Voltar à Loja
           </Link>
         </div>
-      </StoreLayout>
+      </>
     )
   }
 
   return (
-    <StoreLayout>
+    <>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center gap-3 mb-8">
           <Lock size={20} className="text-neon-pink" />
@@ -250,6 +249,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-    </StoreLayout>
+    </>
   )
 }
