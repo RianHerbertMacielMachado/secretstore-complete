@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+/* Fontes carregadas via next/font/google no layout.tsx */
 
 @tailwind base;
 @tailwind components;
@@ -203,6 +203,100 @@
     scrollbar-width: none;
   }
 }
+
+/* ==========================================
+   LAYOUT THEMES
+   Aplicados via data-layout no body
+   ========================================== */
+
+/* Dark Grunge (padrão) */
+[data-layout="dark-grunge"] {
+  --accent: #ff007f;
+  --accent-soft: rgba(255,0,127,0.15);
+  --bg-hero: radial-gradient(ellipse at 30% 50%, rgba(139,0,0,0.12) 0%, transparent 60%),
+             radial-gradient(ellipse at 70% 20%, rgba(255,0,127,0.08) 0%, transparent 40%);
+}
+
+/* Neon Minimal */
+[data-layout="neon-minimal"] {
+  --accent: #00ff88;
+  --accent-soft: rgba(0,255,136,0.12);
+  --bg-hero: radial-gradient(ellipse at 50% 50%, rgba(0,255,136,0.06) 0%, transparent 70%);
+}
+[data-layout="neon-minimal"] .text-neon-pink { color: #00ff88 !important; }
+[data-layout="neon-minimal"] .border-neon-pink { border-color: #00ff88 !important; }
+[data-layout="neon-minimal"] .bg-neon-pink { background-color: #00ff88 !important; }
+[data-layout="neon-minimal"] .hover\:text-neon-pink:hover { color: #00ff88 !important; }
+[data-layout="neon-minimal"] .badge-neon { background: rgba(0,255,136,0.15) !important; color: #00ff88 !important; border-color: rgba(0,255,136,0.3) !important; }
+[data-layout="neon-minimal"] .btn-neon { border-color: #00ff88 !important; color: #00ff88 !important; }
+[data-layout="neon-minimal"] .btn-neon:hover { background: #00ff88 !important; color: #000 !important; }
+[data-layout="neon-minimal"] ::-webkit-scrollbar-thumb { background: rgba(0,255,136,0.4) !important; }
+
+/* Elegant Gothic */
+[data-layout="elegant-gothic"] {
+  --accent: #9333ea;
+  --accent-soft: rgba(147,51,234,0.15);
+  --bg-hero: radial-gradient(ellipse at 30% 30%, rgba(147,51,234,0.12) 0%, transparent 60%),
+             radial-gradient(ellipse at 70% 70%, rgba(168,85,247,0.06) 0%, transparent 40%);
+}
+[data-layout="elegant-gothic"] body { background: #080010 !important; }
+[data-layout="elegant-gothic"] .text-neon-pink { color: #a855f7 !important; }
+[data-layout="elegant-gothic"] .border-neon-pink { border-color: #9333ea !important; }
+[data-layout="elegant-gothic"] .bg-neon-pink { background-color: #9333ea !important; }
+[data-layout="elegant-gothic"] .hover\:text-neon-pink:hover { color: #a855f7 !important; }
+[data-layout="elegant-gothic"] .badge-neon { background: rgba(147,51,234,0.15) !important; color: #a855f7 !important; border-color: rgba(147,51,234,0.3) !important; }
+[data-layout="elegant-gothic"] .btn-neon { border-color: #9333ea !important; color: #a855f7 !important; }
+[data-layout="elegant-gothic"] .btn-neon:hover { background: #9333ea !important; color: #fff !important; }
+[data-layout="elegant-gothic"] ::-webkit-scrollbar-thumb { background: rgba(147,51,234,0.4) !important; }
+
+/* Street Punk */
+[data-layout="street-punk"] {
+  --accent: #facc15;
+  --accent-soft: rgba(250,204,21,0.12);
+  --bg-hero: radial-gradient(ellipse at 20% 60%, rgba(220,38,38,0.1) 0%, transparent 50%),
+             radial-gradient(ellipse at 80% 30%, rgba(250,204,21,0.08) 0%, transparent 40%);
+}
+[data-layout="street-punk"] .text-neon-pink { color: #facc15 !important; }
+[data-layout="street-punk"] .border-neon-pink { border-color: #facc15 !important; }
+[data-layout="street-punk"] .bg-neon-pink { background-color: #facc15 !important; }
+[data-layout="street-punk"] .hover\:text-neon-pink:hover { color: #facc15 !important; }
+[data-layout="street-punk"] .badge-neon { background: rgba(250,204,21,0.1) !important; color: #facc15 !important; border-color: rgba(250,204,21,0.3) !important; }
+[data-layout="street-punk"] .btn-neon { border-color: #facc15 !important; color: #facc15 !important; }
+[data-layout="street-punk"] .btn-neon:hover { background: #facc15 !important; color: #000 !important; }
+[data-layout="street-punk"] ::-webkit-scrollbar-thumb { background: rgba(250,204,21,0.4) !important; }
+
+/* Anime Shop */
+[data-layout="anime-shop"] {
+  --accent: #ec4899;
+  --accent-soft: rgba(236,72,153,0.15);
+  --bg-hero: radial-gradient(ellipse at 40% 40%, rgba(236,72,153,0.12) 0%, transparent 60%),
+             radial-gradient(ellipse at 70% 70%, rgba(244,114,182,0.06) 0%, transparent 40%);
+}
+[data-layout="anime-shop"] .card-product { border-radius: 1.5rem !important; }
+[data-layout="anime-shop"] .text-neon-pink { color: #f472b6 !important; }
+[data-layout="anime-shop"] .border-neon-pink { border-color: #ec4899 !important; }
+[data-layout="anime-shop"] .bg-neon-pink { background-color: #ec4899 !important; }
+[data-layout="anime-shop"] .hover\:text-neon-pink:hover { color: #f472b6 !important; }
+[data-layout="anime-shop"] .badge-neon { background: rgba(236,72,153,0.15) !important; color: #f472b6 !important; border-color: rgba(236,72,153,0.3) !important; }
+[data-layout="anime-shop"] .btn-neon { border-color: #ec4899 !important; color: #f472b6 !important; }
+[data-layout="anime-shop"] .btn-neon:hover { background: #ec4899 !important; color: #fff !important; }
+
+/* Ultra Minimal */
+[data-layout="ultra-minimal"] {
+  --accent: #ffffff;
+  --accent-soft: rgba(255,255,255,0.08);
+  --bg-hero: none;
+}
+[data-layout="ultra-minimal"] body { background: #050505 !important; }
+[data-layout="ultra-minimal"] .text-neon-pink { color: #ffffff !important; }
+[data-layout="ultra-minimal"] .border-neon-pink { border-color: rgba(255,255,255,0.4) !important; }
+[data-layout="ultra-minimal"] .bg-neon-pink { background-color: #ffffff !important; color: #000 !important; }
+[data-layout="ultra-minimal"] .hover\:text-neon-pink:hover { color: #ffffff !important; }
+[data-layout="ultra-minimal"] .badge-neon { background: rgba(255,255,255,0.08) !important; color: #ffffff !important; border-color: rgba(255,255,255,0.2) !important; }
+[data-layout="ultra-minimal"] .btn-neon { border-color: rgba(255,255,255,0.4) !important; color: #ffffff !important; }
+[data-layout="ultra-minimal"] .btn-neon:hover { background: #ffffff !important; color: #000 !important; }
+[data-layout="ultra-minimal"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2) !important; }
+[data-layout="ultra-minimal"] .bg-graffiti { background-image: none !important; }
 
 /* Animations */
 @keyframes glow {

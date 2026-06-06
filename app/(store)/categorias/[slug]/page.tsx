@@ -1,0 +1,48 @@
+import { prisma } from '@/lib/prisma'
+import { notFound } from 'next/navigation'
+import StoreLayout from '@/components/layouts/StoreLayout'
+import ProdutosClient from '@/components/store/ProdutosClient'
+
+interface Props {
+  params: { slug: string }
+}
+
+export async function generateStaticParams() {
+  const categories = await prisma.category.findMany({
+    where: { isVisible: true },
+    select: { slug: true },
+  })
+  return categories.map((c) => ({ slug: c.slug }))
+}
+
+export default async function CategoriaSlugPage({ params }: Props) {
+  const category = await prisma.category.findUnique({
+    where: { slug: params.slug },
+    include: {
+      products: {
+        where: { status: 'ACTIVE' },
+        include: { category: true },
+        orderBy: { createdAt: 'desc' },
+      },
+    },
+  })
+
+  if (!category || !category.isVisible) notFound()
+
+  const allCategories = await prisma.category.findMany({
+    where: { isVisible: true },
+    orderBy: { sortOrder: 'asc' },
+  })
+
+  return (
+    <StoreLayout>
+      <ProdutosClient
+        products={category.products.map((p) => ({ ...p, images: JSON.parse(p.images || '[]') }))}
+        categories={allCategories}
+        activeCategory={params.slug}
+        searchQuery=""
+        sortOrder="recentes"
+      />
+    </StoreLayout>
+  )
+}
