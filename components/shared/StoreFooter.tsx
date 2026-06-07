@@ -39,10 +39,13 @@ export default function StoreFooter({ storeName = 'DarkShop' }: StoreFooterProps
           <div>
             <h4 className="font-gothic text-sm font-semibold text-white/80 uppercase tracking-wider mb-4">Loja</h4>
             <ul className="space-y-2">
-              {['Todos os Produtos', 'E-books', 'Cursos', 'Templates'].map((item) => (
-                <li key={item}>
-                  <Link href="/produtos" className="text-sm text-white/50 hover:text-neon-pink transition-colors">
-                    {item}
+              {[
+                { label: 'Todos os Produtos', href: '/produtos' },
+                { label: 'Categorias', href: '/categorias' }
+              ].map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="text-sm text-white/50 hover:text-neon-pink transition-colors">
+                    {item.label}
                   </Link>
                 </li>
               ))}
