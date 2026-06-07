@@ -43,6 +43,7 @@ export default function StoreFooter({ storeName = 'DarkShop' }: StoreFooterProps
                 { label: 'Todos os Produtos', href: '/produtos' },
                 { label: 'Categorias', href: '/categorias' }
               ].map((item) => (
+                // eslint-disable-next-line react/jsx-key
                 <li key={item.label}>
                   <Link href={item.href} className="text-sm text-white/50 hover:text-neon-pink transition-colors">
                     {item.label}
