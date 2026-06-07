@@ -31,10 +31,16 @@ export default function AdminCuponsClient({ coupons: init }: { coupons: Coupon[]
     e.preventDefault()
     setIsLoading(true)
     try {
+      const payload = {
+        ...form,
+        discountValue: parseFloat(form.discountValue),
+        totalUsageLimit: form.totalUsageLimit ? parseInt(form.totalUsageLimit, 10) : null,
+      }
+
       const res = await fetch('/api/admin/coupons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, discountValue: parseFloat(form.discountValue) }),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
