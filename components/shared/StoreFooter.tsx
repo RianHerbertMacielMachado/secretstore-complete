@@ -1,4 +1,7 @@
+"use client"
+
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 
 interface StoreFooterProps {
   storeName?: string
@@ -56,13 +59,26 @@ export default function StoreFooter({ storeName = 'DarkShop' }: StoreFooterProps
           <div>
             <h4 className="font-gothic text-sm font-semibold text-white/80 uppercase tracking-wider mb-4">Suporte</h4>
             <ul className="space-y-2">
-              {['Minha Conta', 'Meus Pedidos', 'FAQ', 'Contato'].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-sm text-white/50 hover:text-neon-pink transition-colors">
-                    {item}
-                  </a>
-                </li>
-              ))}
+              {(() => {
+                const { data: session } = useSession()
+
+                return [
+                  { label: 'Minha Conta', href: session ? '/conta' : null },
+                  { label: 'Meus Pedidos', href: '/conta/pedidos' },
+                  { label: 'FAQ', href: null },
+                  { label: 'Contato', href: null },
+                ].map((item) => (
+                  <li key={item.label}>
+                    {item.href ? (
+                      <Link href={item.href} className="text-sm text-white/50 hover:text-neon-pink transition-colors">
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-white/50">{item.label}</span>
+                    )}
+                  </li>
+                ))
+              })()}
             </ul>
           </div>
         </div>
