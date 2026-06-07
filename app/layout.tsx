@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   description: 'Sua loja de produtos digitais com estética gótica e design alternativo',
   keywords: ['produtos digitais', 'ebooks', 'cursos online', 'templates', 'dark aesthetic'],
   icons: {
-    icon: '/favicon.ico',
+    icon: '../public/favicon.ico',
   },
 }
 

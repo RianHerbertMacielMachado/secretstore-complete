@@ -64,6 +64,18 @@ export default function AdminCuponsClient({ coupons: init }: { coupons: Coupon[]
     } catch { toast.error('Erro ao atualizar') }
   }
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Deseja excluir este cupom?')) return
+    try {
+      const res = await fetch(`/api/admin/coupons/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Erro ao excluir cupom')
+      setCoupons(coupons.filter((coupon) => coupon.id !== id))
+      toast.success('Cupom excluído!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao excluir cupom')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -109,14 +121,22 @@ export default function AdminCuponsClient({ coupons: init }: { coupons: Coupon[]
                   </span>
                 </td>
                 <td className="p-4">
-                  <button
-                    onClick={() => toggleActive(c.id, c.isActive)}
-                    className={`text-xs px-3 py-1 rounded-full border transition-all ${
-                      c.isActive ? 'badge-green' : 'badge-red'
-                    }`}
-                  >
-                    {c.isActive ? 'Ativo' : 'Inativo'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleActive(c.id, c.isActive)}
+                      className={`text-xs px-3 py-1 rounded-full border transition-all ${
+                        c.isActive ? 'badge-green' : 'badge-red'
+                      }`}
+                    >
+                      {c.isActive ? 'Ativo' : 'Inativo'}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(c.id)}
+                      className="text-xs px-3 py-1 rounded-full border border-red-500 text-red-400 hover:bg-red-500/10 transition-all"
+                    >
+                      Excluir
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
