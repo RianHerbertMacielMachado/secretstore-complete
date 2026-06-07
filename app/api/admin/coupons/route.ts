@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         categoryIds: JSON.stringify(body.categoryIds || []),
         productIds: JSON.stringify(body.productIds || []),
         expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
-        totalUsageLimit: body.totalUsageLimit || null,
+        totalUsageLimit: body.totalUsageLimit ? parseInt(body.totalUsageLimit, 10) : null,
         perCustomerLimit: body.perCustomerLimit || 1,
         isActive: body.isActive ?? true,
       },
