@@ -33,7 +33,7 @@ export default function AdminSidebar() {
           <span className="text-2xl text-neon-pink" style={{filter:'drop-shadow(0 0 6px #ff007f)'}}>✝</span>
           <div>
             <div className="font-gothic text-lg font-bold text-white">
-              DARK<span className="text-neon-pink">SHOP</span>
+              SECRET<span className="text-neon-pink">STORE</span>
             </div>
             <div className="text-xs text-white/30">Admin Panel</div>
           </div>

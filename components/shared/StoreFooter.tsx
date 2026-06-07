@@ -22,7 +22,7 @@ export default function StoreFooter({ storeName = 'DarkShop' }: StoreFooterProps
               </span>
             </Link>
             <p className="text-white/50 text-sm leading-relaxed max-w-xs">
-              Sua loja de produtos digitais premium com estética gótica única. 
+              Sua loja de produtos digitais premium. 
               Qualidade, estilo e entrega imediata.
             </p>
             <div className="flex gap-4 mt-6">

@@ -25,8 +25,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'DarkShop — Produtos Digitais Premium',
-    template: '%s | DarkShop',
+    default: 'Secret Store — Produtos Digitais Premium',
+    template: '%s | Secret Store',
   },
   description: 'Sua loja de produtos digitais com estética gótica e design alternativo',
   keywords: ['produtos digitais', 'ebooks', 'cursos online', 'templates', 'dark aesthetic'],
