@@ -122,7 +122,13 @@ export default function AdminCuponsClient({ coupons: init }: { coupons: Coupon[]
         {showForm && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 z-50" onClick={() => setShowForm(false)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#0d0d0d] border border-white/10 rounded-2xl z-50 p-6">
+            <motion.div
+              initial={{ opacity: 0, x: 20, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 20, scale: 0.95 }}
+              className="fixed inset-y-4 right-4 w-full max-w-lg bg-[#0d0d0d] border border-white/10 rounded-2xl overflow-y-auto z-50 p-6"
+              style={{ boxShadow: '0 0 60px rgba(255,0,127,0.1)' }}
+            >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-gothic text-xl font-bold text-white">Novo Cupom</h2>
                 <button onClick={() => setShowForm(false)} className="text-white/40 hover:text-white"><X size={20} /></button>
