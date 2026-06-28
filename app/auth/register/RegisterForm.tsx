@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react'
 import { signIn } from 'next-auth/react'
 
 interface Props {
@@ -64,6 +64,17 @@ export default function RegisterForm({ storeName }: Props) {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
+        {/* Voltar à loja */}
+        <div className="mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-neon-pink transition-colors group"
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            Voltar à loja
+          </Link>
+        </div>
+
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
