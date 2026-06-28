@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/auth-options'
-import path from 'path'
-import fs from 'fs'
-import { v4 as uuidv4 } from 'uuid'
 
 async function checkAdmin() {
   const session = await getServerSession(authOptions)
@@ -40,24 +37,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Converte para base64 Data URL — sem filesystem, funciona em qualquer ambiente
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
+    const base64 = buffer.toString('base64')
+    const dataUrl = `data:${file.type};base64,${base64}`
 
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true })
-    }
-
-    // Generate unique filename preserving extension
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const filename = `${uuidv4()}.${ext}`
-    const filepath = path.join(uploadsDir, filename)
-
-    fs.writeFileSync(filepath, buffer)
-
-    const url = `/uploads/${filename}`
-    return NextResponse.json({ url }, { status: 201 })
+    return NextResponse.json({ url: dataUrl }, { status: 201 })
   } catch (error: any) {
     console.error('[UPLOAD ERROR]', error)
     return NextResponse.json(
