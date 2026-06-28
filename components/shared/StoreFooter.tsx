@@ -37,14 +37,13 @@ export default function StoreFooter({ storeName = 'DarkShop', discordUrl }: Stor
               <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-white/40 hover:text-neon-pink hover:border-neon-pink/50 cursor-pointer transition-all">
                 ✦
               </div>
-              {/* Discord Icon — só aparece se discordUrl estiver preenchido */}
-              {discordUrl && (
+              {/* Discord Icon — sempre visível, clicável se discordUrl preenchido */}
+              {discordUrl ? (
                 <a
                   href={discordUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center transition-all group hover:border-[#5865F2]/60"
-                  style={{ '--discord': '#5865F2' } as React.CSSProperties}
                   title="Entrar no Discord"
                   aria-label="Discord da loja"
                 >
@@ -53,6 +52,10 @@ export default function StoreFooter({ storeName = 'DarkShop', discordUrl }: Stor
                     className="text-white/40 group-hover:text-[#5865F2] transition-colors"
                   />
                 </a>
+              ) : (
+                <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-white/40 hover:text-[#5865F2] hover:border-[#5865F2]/50 cursor-pointer transition-all">
+                  <FaDiscord size={20} />
+                </div>
               )}
             </div>
           </div>
