@@ -7,3 +7,4 @@ node_modules/
 dist/
 .wrangler/
 # prisma/migrations/ — NÃO ignorar: necessário para deploy no servidor
+tsconfig.tsbuildinfo
