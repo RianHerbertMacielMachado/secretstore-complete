@@ -1,0 +1,22 @@
+# nixpacks.toml
+# Controla as fases do build no Railway/Nixpacks
+#
+# Problema resolvido: o Nixpacks executava 'npm ci' automaticamente na fase
+# 'install' (stage 6), antes do buildCommand. Isso causava conflitos com:
+#   - mount de cache do BuildKit em node_modules/.cache (EBUSY)
+#   - postinstall hooks tentando acessar node_modules inexistente
+#   - scripts com prisma falhando por PATH restrito
+#
+# Solução: substituir a fase install por vazio, e fazer TUDO no build.
+
+[phases.install]
+cmds = []
+
+[phases.build]
+cmds = [
+  "npm install --legacy-peer-deps",
+  "node node_modules/prisma/build/index.js generate",
+  "npm run build",
+  "cp -r .next/static .next/standalone/.next/static",
+  "cp -r public .next/standalone/public"
+]
