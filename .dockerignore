@@ -1,0 +1,35 @@
+# Dependências
+node_modules
+npm-debug.log*
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Variáveis de ambiente (nunca commitar)
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# Configs de dev
+.eslintrc*
+.prettierrc*
+README*
+*.md
+
+# Testes
+__tests__
+*.test.*
+*.spec.*
+
+# Misc
+.DS_Store
+*.log
+.nixpacks
+nixpacks.toml
