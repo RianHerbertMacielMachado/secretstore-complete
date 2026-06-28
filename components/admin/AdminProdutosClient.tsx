@@ -373,14 +373,14 @@ export default function AdminProdutosClient({ products: initialProducts, subCate
                   label="Imagem Principal"
                   required
                   value={form.mainImage}
-                  onChange={(url) => setForm({ ...form, mainImage: url })}
+                  onChange={(url) => setForm(prev => ({ ...prev, mainImage: url }))}
                 />
 
                 {/* Múltiplas Imagens */}
                 <MultiImageUpload
                   label="Galeria de Imagens"
                   images={form.images}
-                  onChange={(imgs) => setForm({ ...form, images: imgs })}
+                  onChange={(imgs) => setForm(prev => ({ ...prev, images: imgs }))}
                 />
 
                 {/* YouTube URL */}

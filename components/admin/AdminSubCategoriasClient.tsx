@@ -280,7 +280,7 @@ export default function AdminSubCategoriasClient({ subCategories: init, categori
                 <ImageUpload
                   label="Imagem da Sub-Categoria"
                   value={form.image}
-                  onChange={(url) => setForm({ ...form, image: url })}
+                  onChange={(url) => setForm(prev => ({ ...prev, image: url }))}
                 />
 
                 <div className="flex items-center gap-3">
