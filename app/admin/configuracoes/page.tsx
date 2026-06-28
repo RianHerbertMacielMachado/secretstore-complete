@@ -30,6 +30,7 @@ export default async function AdminConfiguracoesPage() {
       envStatus={envStatus}
       webhookBase={webhookBase}
       discordUrl={storeSettings?.discordUrl ?? null}
+      productsPerPage={storeSettings?.productsPerPage ?? 15}
     />
   )
 }

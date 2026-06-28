@@ -179,8 +179,9 @@ model SiteConfig {
 }
 
 model StoreSettings {
-  id         String  @id @default(cuid())
-  discordUrl String?
+  id               String  @id @default(cuid())
+  discordUrl       String?
+  productsPerPage  Int     @default(15)
 }
 
 model WebhookLog {

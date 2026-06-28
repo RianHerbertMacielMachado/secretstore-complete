@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { Search, SlidersHorizontal, X, Grid3X3, List } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils/helpers'
 import { useCartStore } from '@/stores/cartStore'
+import Pagination from '@/components/shared/Pagination'
 import toast from 'react-hot-toast'
 
 interface Product {
@@ -36,6 +37,8 @@ interface Props {
   subCategoryName?: string
   categoryName?: string
   categorySlug?: string
+  /** Quantidade de produtos por página vinda das configurações da loja */
+  productsPerPage?: number
 }
 
 function ProductCard({ product, index, view }: { product: Product; index: number; view: 'grid' | 'list' }) {
@@ -152,18 +155,30 @@ const SORT_OPTIONS = [
   { value: 'nome', label: 'Nome A-Z' },
 ]
 
-export default function ProdutosClient({ products, categories, activeCategory, searchQuery, sortOrder, subCategoryName, categoryName, categorySlug }: Props) {
+export default function ProdutosClient({
+  products,
+  categories,
+  activeCategory,
+  searchQuery,
+  sortOrder,
+  subCategoryName,
+  categoryName,
+  categorySlug,
+  productsPerPage = 15,
+}: Props) {
   const router = useRouter()
   const [search, setSearch] = useState(searchQuery)
   const [view, setView] = useState<'grid' | 'list'>('grid')
-  const [showFilters, setShowFilters] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
+  // Reset page to 1 whenever any filter/sort changes
   const updateParams = (params: Record<string, string>) => {
     const sp = new URLSearchParams()
     if (params.categoria) sp.set('categoria', params.categoria)
     if (params.busca) sp.set('busca', params.busca)
     if (params.ordem && params.ordem !== 'recentes') sp.set('ordem', params.ordem)
     const q = sp.toString()
+    setCurrentPage(1)
     router.push(`/produtos${q ? `?${q}` : ''}`)
   }
 
@@ -184,6 +199,19 @@ export default function ProdutosClient({ products, categories, activeCategory, s
     setSearch('')
     updateParams({ categoria: activeCategory, busca: '', ordem: sortOrder })
   }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll suave ao topo dos produtos
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Paginação
+  const totalPages = Math.ceil(products.length / productsPerPage)
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * productsPerPage
+    return products.slice(start, start + productsPerPage)
+  }, [products, currentPage, productsPerPage])
 
   return (
     <div className="min-h-screen pt-24 pb-20">
@@ -213,6 +241,11 @@ export default function ProdutosClient({ products, categories, activeCategory, s
           )}
           <p className="text-white/40 text-lg">
             {products.length} produto{products.length !== 1 ? 's' : ''} encontrado{products.length !== 1 ? 's' : ''}
+            {totalPages > 1 && (
+              <span className="ml-2 text-white/25 text-sm">
+                — página {currentPage} de {totalPages}
+              </span>
+            )}
           </p>
         </div>
       </div>
@@ -310,7 +343,7 @@ export default function ProdutosClient({ products, categories, activeCategory, s
         ) : view === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatePresence mode="popLayout">
-              {products.map((product, i) => (
+              {paginatedProducts.map((product, i) => (
                 <ProductCard key={product.id} product={product} index={i} view="grid" />
               ))}
             </AnimatePresence>
@@ -318,11 +351,20 @@ export default function ProdutosClient({ products, categories, activeCategory, s
         ) : (
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
-              {products.map((product, i) => (
+              {paginatedProducts.map((product, i) => (
                 <ProductCard key={product.id} product={product} index={i} view="list" />
               ))}
             </AnimatePresence>
           </div>
+        )}
+
+        {/* Paginação */}
+        {products.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         )}
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle, XCircle, Copy, ExternalLink, Save, Settings, Webhook, Globe } from 'lucide-react'
+import { CheckCircle, XCircle, Copy, ExternalLink, Save, Settings, Webhook, Globe, LayoutGrid } from 'lucide-react'
 import { FaDiscord } from 'react-icons/fa'
 import toast from 'react-hot-toast'
 
@@ -10,6 +10,7 @@ interface Props {
   envStatus: Record<string, boolean>
   webhookBase: string
   discordUrl: string | null
+  productsPerPage: number
 }
 
 function StatusRow({ label, configured, envVar }: { label: string; configured: boolean; envVar: string }) {
@@ -59,15 +60,23 @@ function WebhookRow({ label, url }: { label: string; url: string }) {
   )
 }
 
-export default function AdminConfiguracoesClient({ configMap, envStatus, webhookBase, discordUrl: initialDiscordUrl }: Props) {
+const PAGE_OPTIONS = [
+  { value: 15, label: '5×3 — 15 produtos por página', cols: 3 },
+  { value: 20, label: '5×4 — 20 produtos por página', cols: 4 },
+  { value: 25, label: '5×5 — 25 produtos por página', cols: 5 },
+]
+
+export default function AdminConfiguracoesClient({ configMap, envStatus, webhookBase, discordUrl: initialDiscordUrl, productsPerPage: initialPerPage }: Props) {
   const [siteForm, setSiteForm] = useState({
     store_name: configMap.store_name || configMap.site_name || 'DarkShop',
     store_subtitle: configMap.store_subtitle || 'Produtos digitais com estética gótica e entrega imediata',
     site_description: configMap.site_description || '',
   })
   const [discordUrl, setDiscordUrl] = useState(initialDiscordUrl || '')
+  const [productsPerPage, setProductsPerPage] = useState<number>(initialPerPage || 15)
   const [isSaving, setIsSaving] = useState(false)
   const [isSavingDiscord, setIsSavingDiscord] = useState(false)
+  const [isSavingPagination, setIsSavingPagination] = useState(false)
 
   const saveConfig = async () => {
     setIsSaving(true)
@@ -93,7 +102,7 @@ export default function AdminConfiguracoesClient({ configMap, envStatus, webhook
       const res = await fetch('/api/store-settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ discordUrl: discordUrl || null }),
+        body: JSON.stringify({ discordUrl: discordUrl || null, productsPerPage }),
       })
       if (!res.ok) throw new Error('Erro ao salvar')
       toast.success('Link do Discord salvo!')
@@ -101,6 +110,23 @@ export default function AdminConfiguracoesClient({ configMap, envStatus, webhook
       toast.error('Erro ao salvar link do Discord')
     } finally {
       setIsSavingDiscord(false)
+    }
+  }
+
+  const savePagination = async () => {
+    setIsSavingPagination(true)
+    try {
+      const res = await fetch('/api/store-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ discordUrl: discordUrl || null, productsPerPage }),
+      })
+      if (!res.ok) throw new Error('Erro ao salvar')
+      toast.success('Paginação salva!')
+    } catch {
+      toast.error('Erro ao salvar paginação')
+    } finally {
+      setIsSavingPagination(false)
     }
   }
 
@@ -173,6 +199,80 @@ export default function AdminConfiguracoesClient({ configMap, envStatus, webhook
             {isSaving ? 'Salvando...' : 'Salvar Configurações'}
           </button>
         </div>
+      </div>
+
+      {/* Paginação de Produtos */}
+      <div className="bg-[#0d0d0d] border border-white/10 rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-8 h-8 bg-neon-pink/10 rounded-lg flex items-center justify-center">
+            <LayoutGrid size={16} className="text-neon-pink" />
+          </div>
+          <div>
+            <h2 className="text-white font-semibold">Paginação de Produtos</h2>
+            <p className="text-xs text-white/40">Quantidade de produtos exibidos por página nas listagens</p>
+          </div>
+        </div>
+
+        <div className="space-y-3 mb-5">
+          {PAGE_OPTIONS.map((opt) => (
+            <label
+              key={opt.value}
+              className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
+                productsPerPage === opt.value
+                  ? 'border-neon-pink/50 bg-neon-pink/5'
+                  : 'border-white/10 bg-white/2 hover:border-white/20'
+              }`}
+            >
+              <input
+                type="radio"
+                name="productsPerPage"
+                value={opt.value}
+                checked={productsPerPage === opt.value}
+                onChange={() => setProductsPerPage(opt.value)}
+                className="accent-neon-pink"
+              />
+              {/* Mini grid preview */}
+              <div className="flex gap-1 flex-shrink-0">
+                {Array.from({ length: 5 }).map((_, row) => (
+                  <div key={row} className="flex flex-col gap-1">
+                    {Array.from({ length: opt.cols }).map((_, col) => (
+                      <div
+                        key={col}
+                        className={`w-3 h-3 rounded-sm ${
+                          productsPerPage === opt.value ? 'bg-neon-pink/60' : 'bg-white/20'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div>
+                <p className={`text-sm font-medium ${
+                  productsPerPage === opt.value ? 'text-neon-pink' : 'text-white'
+                }`}>
+                  {opt.label}
+                </p>
+                <p className="text-xs text-white/30">
+                  Grade com 5 linhas × {opt.cols} colunas
+                </p>
+              </div>
+              {productsPerPage === opt.value && (
+                <span className="ml-auto text-xs px-2 py-0.5 bg-neon-pink/20 text-neon-pink border border-neon-pink/30 rounded">
+                  Ativo
+                </span>
+              )}
+            </label>
+          ))}
+        </div>
+
+        <button
+          onClick={savePagination}
+          disabled={isSavingPagination}
+          className="btn-neon-solid px-6 py-2.5 rounded-xl flex items-center gap-2 text-sm disabled:opacity-50"
+        >
+          <Save size={16} />
+          {isSavingPagination ? 'Salvando...' : 'Salvar Paginação'}
+        </button>
       </div>
 
       {/* Discord */}

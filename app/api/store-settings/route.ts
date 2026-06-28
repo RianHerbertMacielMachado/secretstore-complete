@@ -24,14 +24,24 @@ export async function PUT(req: NextRequest) {
   if (!await checkAdmin()) return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
   try {
     const body = await req.json()
+
+    // Validate productsPerPage — only accept 15, 20 or 25
+    const allowedPerPage = [15, 20, 25]
+    const productsPerPage =
+      allowedPerPage.includes(Number(body.productsPerPage))
+        ? Number(body.productsPerPage)
+        : 15
+
     const settings = await prisma.storeSettings.upsert({
       where: { id: 'singleton' },
       update: {
         discordUrl: body.discordUrl ?? null,
+        productsPerPage,
       },
       create: {
         id: 'singleton',
         discordUrl: body.discordUrl ?? null,
+        productsPerPage,
       },
     })
     return NextResponse.json({ settings })

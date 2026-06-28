@@ -15,7 +15,7 @@ interface Props {
 export default async function ProdutosPage({ searchParams }: Props) {
   const { categoria, busca, ordem } = searchParams
 
-  const [products, categories] = await Promise.all([
+  const [products, categories, storeSettings] = await Promise.all([
     prisma.product.findMany({
       where: {
         status: 'ACTIVE',
@@ -48,7 +48,10 @@ export default async function ProdutosPage({ searchParams }: Props) {
       where: { isVisible: true },
       orderBy: { sortOrder: 'asc' },
     }),
+    prisma.storeSettings.findFirst(),
   ])
+
+  const productsPerPage = storeSettings?.productsPerPage ?? 15
 
   return (
     <ProdutosClient
@@ -61,6 +64,7 @@ export default async function ProdutosPage({ searchParams }: Props) {
       activeCategory={categoria || ''}
       searchQuery={busca || ''}
       sortOrder={ordem || 'recentes'}
+      productsPerPage={productsPerPage}
     />
   )
 }

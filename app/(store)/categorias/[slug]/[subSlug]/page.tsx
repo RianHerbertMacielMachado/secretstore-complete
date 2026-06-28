@@ -21,33 +21,36 @@ export async function generateStaticParams() {
 }
 
 export default async function SubCategoriaSlugPage({ params }: Props) {
-  const subCategory = await prisma.subCategory.findUnique({
-    where: { slug: params.subSlug },
-    include: {
-      category: true,
-      products: {
-        where: { status: 'ACTIVE' },
-        include: {
-          subCategory: {
-            include: { category: true },
+  const [subCategory, allCategories, storeSettings] = await Promise.all([
+    prisma.subCategory.findUnique({
+      where: { slug: params.subSlug },
+      include: {
+        category: true,
+        products: {
+          where: { status: 'ACTIVE' },
+          include: {
+            subCategory: {
+              include: { category: true },
+            },
+            productImages: { orderBy: { order: 'asc' } },
           },
-          productImages: { orderBy: { order: 'asc' } },
+          orderBy: { createdAt: 'desc' },
         },
-        orderBy: { createdAt: 'desc' },
       },
-    },
-  })
+    }),
+    prisma.category.findMany({
+      where: { isVisible: true },
+      orderBy: { sortOrder: 'asc' },
+    }),
+    prisma.storeSettings.findFirst(),
+  ])
 
   if (!subCategory || !subCategory.isVisible) notFound()
 
   // Ensure the subCategory belongs to the given category slug
   if (subCategory.category.slug !== params.slug) notFound()
 
-  // Get all categories for the filter bar
-  const allCategories = await prisma.category.findMany({
-    where: { isVisible: true },
-    orderBy: { sortOrder: 'asc' },
-  })
+  const productsPerPage = storeSettings?.productsPerPage ?? 15
 
   return (
     <ProdutosClient
@@ -63,6 +66,7 @@ export default async function SubCategoriaSlugPage({ params }: Props) {
       subCategoryName={subCategory.name}
       categoryName={subCategory.category.name}
       categorySlug={params.slug}
+      productsPerPage={productsPerPage}
     />
   )
 }
