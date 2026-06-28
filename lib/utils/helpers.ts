@@ -58,3 +58,24 @@ export function truncate(str: string, length: number): string {
   if (str.length <= length) return str
   return str.slice(0, length) + '...'
 }
+
+/**
+ * Extrai o ID do vídeo de qualquer formato de URL do YouTube.
+ * Suporta:
+ *   https://www.youtube.com/watch?v=VIDEO_ID
+ *   https://youtu.be/VIDEO_ID
+ *   https://youtube.com/embed/VIDEO_ID
+ *   https://www.youtube.com/shorts/VIDEO_ID
+ */
+export function extractYoutubeId(url: string): string | null {
+  if (!url) return null
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/.*[?&]v=([A-Za-z0-9_-]{11})/,
+  ]
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match) return match[1]
+  }
+  return null
+}

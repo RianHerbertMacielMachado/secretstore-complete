@@ -24,15 +24,22 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await prisma.product.findUnique({
     where: { slug: params.slug, status: 'ACTIVE' },
-    include: { category: { select: { name: true } } },
+    include: {
+      subCategory: {
+        select: {
+          name: true,
+          category: { select: { name: true } },
+        },
+      },
+    },
   })
 
   if (!product) return { title: 'Produto não encontrado' }
 
   return {
-    title: `${product.name} | DarkShop`,
+    title: `${product.name} | SecretStore`,
     description: product.description.slice(0, 160),
-    keywords: [product.name, product.category.name, 'produto digital', 'DarkShop'],
+    keywords: [product.name, product.subCategory.name, product.subCategory.category.name, 'produto digital'],
     openGraph: {
       title: product.name,
       description: product.description.slice(0, 160),
@@ -51,23 +58,42 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const product = await prisma.product.findUnique({
     where: { slug: params.slug, status: 'ACTIVE' },
-    include: { category: true },
+    include: {
+      subCategory: {
+        include: { category: true },
+      },
+      productImages: { orderBy: { order: 'asc' } },
+    },
   })
 
   if (!product) notFound()
 
+  // Related products: same subCategory
   const related = await prisma.product.findMany({
-    where: { categoryId: product.categoryId, status: 'ACTIVE', id: { not: product.id } },
+    where: {
+      subCategoryId: product.subCategoryId,
+      status: 'ACTIVE',
+      id: { not: product.id },
+    },
     take: 4,
-    include: { category: true },
+    include: {
+      subCategory: {
+        include: { category: true },
+      },
+      productImages: { orderBy: { order: 'asc' } },
+    },
   })
 
   return (
-    <>
-      <ProductDetailClient
-        product={{ ...product, images: JSON.parse(product.images || '[]') }}
-        related={related.map(r => ({ ...r, images: JSON.parse(r.images || '[]') }))}
-      />
-    </>
+    <ProductDetailClient
+      product={{
+        ...product,
+        images: product.productImages.map((img) => img.url),
+      }}
+      related={related.map((r) => ({
+        ...r,
+        images: r.productImages.map((img) => img.url),
+      }))}
+    />
   )
 }

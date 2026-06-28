@@ -4,7 +4,7 @@ import ProdutosClient from '@/components/store/ProdutosClient'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Produtos | DarkShop',
+  title: 'Produtos | SecretStore',
   description: 'Explore nossa coleção de produtos digitais exclusivos',
 }
 
@@ -19,17 +19,22 @@ export default async function ProdutosPage({ searchParams }: Props) {
     prisma.product.findMany({
       where: {
         status: 'ACTIVE',
-        ...(categoria ? { category: { slug: categoria } } : {}),
+        ...(categoria ? { subCategory: { category: { slug: categoria } } } : {}),
         ...(busca
           ? {
               OR: [
-                { name: { contains: busca } },
-                { description: { contains: busca } },
+                { name: { contains: busca, mode: 'insensitive' } },
+                { description: { contains: busca, mode: 'insensitive' } },
               ],
             }
           : {}),
       },
-      include: { category: true },
+      include: {
+        subCategory: {
+          include: { category: true },
+        },
+        productImages: { orderBy: { order: 'asc' } },
+      },
       orderBy:
         ordem === 'preco-asc'
           ? { price: 'asc' }
@@ -46,14 +51,16 @@ export default async function ProdutosPage({ searchParams }: Props) {
   ])
 
   return (
-    <>
-      <ProdutosClient
-        products={products.map((p) => ({ ...p, images: JSON.parse(p.images || '[]') }))}
-        categories={categories}
-        activeCategory={categoria || ''}
-        searchQuery={busca || ''}
-        sortOrder={ordem || 'recentes'}
-      />
-    </>
+    <ProdutosClient
+      products={products.map((p) => ({
+        ...p,
+        images: p.productImages.map((img) => img.url),
+        category: p.subCategory.category,
+      }))}
+      categories={categories}
+      activeCategory={categoria || ''}
+      searchQuery={busca || ''}
+      sortOrder={ordem || 'recentes'}
+    />
   )
 }

@@ -33,6 +33,9 @@ interface Props {
   activeCategory: string
   searchQuery: string
   sortOrder: string
+  subCategoryName?: string
+  categoryName?: string
+  categorySlug?: string
 }
 
 function ProductCard({ product, index, view }: { product: Product; index: number; view: 'grid' | 'list' }) {
@@ -149,7 +152,7 @@ const SORT_OPTIONS = [
   { value: 'nome', label: 'Nome A-Z' },
 ]
 
-export default function ProdutosClient({ products, categories, activeCategory, searchQuery, sortOrder }: Props) {
+export default function ProdutosClient({ products, categories, activeCategory, searchQuery, sortOrder, subCategoryName, categoryName, categorySlug }: Props) {
   const router = useRouter()
   const [search, setSearch] = useState(searchQuery)
   const [view, setView] = useState<'grid' | 'list'>('grid')
@@ -193,10 +196,21 @@ export default function ProdutosClient({ products, categories, activeCategory, s
             animate={{ opacity: 1, y: 0 }}
             className="font-gothic text-4xl sm:text-5xl font-bold text-white mb-3"
           >
-            {activeCategory
+            {subCategoryName
+              ? subCategoryName
+              : activeCategory
               ? categories.find((c) => c.slug === activeCategory)?.name || 'Produtos'
               : 'Todos os Produtos'}
           </motion.h1>
+          {subCategoryName && categoryName && (
+            <div className="flex items-center gap-2 text-sm text-white/40 mb-2">
+              <a href={`/categorias`} className="hover:text-neon-pink transition-colors">Categorias</a>
+              <span>/</span>
+              <a href={`/categorias/${categorySlug}`} className="hover:text-neon-pink transition-colors">{categoryName}</a>
+              <span>/</span>
+              <span className="text-white/60">{subCategoryName}</span>
+            </div>
+          )}
           <p className="text-white/40 text-lg">
             {products.length} produto{products.length !== 1 ? 's' : ''} encontrado{products.length !== 1 ? 's' : ''}
           </p>

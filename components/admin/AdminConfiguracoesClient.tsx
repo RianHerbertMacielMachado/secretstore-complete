@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { CheckCircle, XCircle, Copy, ExternalLink, Save, Settings, Webhook, Globe } from 'lucide-react'
+import { FaDiscord } from 'react-icons/fa'
 import toast from 'react-hot-toast'
 
 interface Props {
   configMap: Record<string, string>
   envStatus: Record<string, boolean>
   webhookBase: string
+  discordUrl: string | null
 }
 
 function StatusRow({ label, configured, envVar }: { label: string; configured: boolean; envVar: string }) {
@@ -57,13 +59,15 @@ function WebhookRow({ label, url }: { label: string; url: string }) {
   )
 }
 
-export default function AdminConfiguracoesClient({ configMap, envStatus, webhookBase }: Props) {
+export default function AdminConfiguracoesClient({ configMap, envStatus, webhookBase, discordUrl: initialDiscordUrl }: Props) {
   const [siteForm, setSiteForm] = useState({
     store_name: configMap.store_name || configMap.site_name || 'DarkShop',
     store_subtitle: configMap.store_subtitle || 'Produtos digitais com estética gótica e entrega imediata',
     site_description: configMap.site_description || '',
   })
+  const [discordUrl, setDiscordUrl] = useState(initialDiscordUrl || '')
   const [isSaving, setIsSaving] = useState(false)
+  const [isSavingDiscord, setIsSavingDiscord] = useState(false)
 
   const saveConfig = async () => {
     setIsSaving(true)
@@ -80,6 +84,23 @@ export default function AdminConfiguracoesClient({ configMap, envStatus, webhook
       toast.error('Erro ao salvar')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const saveDiscordUrl = async () => {
+    setIsSavingDiscord(true)
+    try {
+      const res = await fetch('/api/store-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ discordUrl: discordUrl || null }),
+      })
+      if (!res.ok) throw new Error('Erro ao salvar')
+      toast.success('Link do Discord salvo!')
+    } catch {
+      toast.error('Erro ao salvar link do Discord')
+    } finally {
+      setIsSavingDiscord(false)
     }
   }
 
@@ -132,9 +153,6 @@ export default function AdminConfiguracoesClient({ configMap, envStatus, webhook
               className="input-dark"
               placeholder="Produtos digitais com estética gótica e entrega imediata"
             />
-            <p className="text-xs text-white/30 mt-1">
-              Dica: palavras em itálico são aplicadas automaticamente nas palavras em destaque do subtítulo
-            </p>
           </div>
           <div>
             <label className="block text-xs text-white/50 mb-1.5">Descrição do Site (SEO)</label>
@@ -153,6 +171,54 @@ export default function AdminConfiguracoesClient({ configMap, envStatus, webhook
           >
             <Save size={16} />
             {isSaving ? 'Salvando...' : 'Salvar Configurações'}
+          </button>
+        </div>
+      </div>
+
+      {/* Discord */}
+      <div className="bg-[#0d0d0d] border border-white/10 rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(88,101,242,0.15)' }}>
+            <FaDiscord size={18} style={{ color: '#5865F2' }} />
+          </div>
+          <div>
+            <h2 className="text-white font-semibold">Discord da Loja</h2>
+            <p className="text-xs text-white/40">Link do servidor Discord exibido no footer</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs text-white/50 mb-1.5">
+              Link de Convite do Discord
+              <span className="ml-2 text-white/30">— deixe em branco para ocultar o ícone</span>
+            </label>
+            <input
+              type="url"
+              value={discordUrl}
+              onChange={(e) => setDiscordUrl(e.target.value)}
+              className="input-dark"
+              placeholder="https://discord.gg/seuservidor"
+            />
+          </div>
+
+          {discordUrl && (
+            <div className="flex items-center gap-3 p-3 bg-[#5865F2]/10 border border-[#5865F2]/20 rounded-lg">
+              <FaDiscord size={20} style={{ color: '#5865F2' }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-white/70 truncate">{discordUrl}</p>
+                <p className="text-xs text-white/40">Ícone aparecerá no footer da loja</p>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={saveDiscordUrl}
+            disabled={isSavingDiscord}
+            className="btn-neon-solid px-6 py-2.5 rounded-xl flex items-center gap-2 text-sm disabled:opacity-50"
+          >
+            <Save size={16} />
+            {isSavingDiscord ? 'Salvando...' : 'Salvar Link do Discord'}
           </button>
         </div>
       </div>

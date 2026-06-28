@@ -2,10 +2,16 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, Eye, EyeOff, Search, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, X, Package, Youtube } from 'lucide-react'
 import { formatCurrency, slugify } from '@/lib/utils/helpers'
 import toast from 'react-hot-toast'
-import Image from 'next/image'
+import { ImageUpload, MultiImageUpload } from '@/components/shared/ImageUpload'
+
+interface SubCategory {
+  id: string
+  name: string
+  category: { id: string; name: string }
+}
 
 interface Product {
   id: string
@@ -16,56 +22,53 @@ interface Product {
   mainImage: string
   status: string
   featured: boolean
-  category: { name: string }
-  categoryId: string
+  youtubeUrl: string | null
+  subCategory: { id: string; name: string; category: { id: string; name: string } }
+  subCategoryId: string
   description: string
   driveLink: string
   driveDeliveryMethod: string
+  images: string[]
 }
 
-interface Category {
-  id: string
-  name: string
-}
-
-export default function AdminProdutosClient({
-  products: initialProducts,
-  categories,
-}: {
+interface Props {
   products: Product[]
-  categories: Category[]
-}) {
+  subCategories: SubCategory[]
+}
+
+const emptyForm = (defaultSubCategoryId = '') => ({
+  name: '',
+  slug: '',
+  description: '',
+  price: '',
+  salePrice: '',
+  mainImage: '',
+  images: [] as string[],
+  youtubeUrl: '',
+  subCategoryId: defaultSubCategoryId,
+  driveLink: '',
+  driveDeliveryMethod: 'LINK',
+  status: 'ACTIVE',
+  featured: false,
+})
+
+export default function AdminProdutosClient({ products: initialProducts, subCategories }: Props) {
   const [products, setProducts] = useState(initialProducts)
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [form, setForm] = useState({
-    name: '',
-    slug: '',
-    description: '',
-    price: '',
-    salePrice: '',
-    mainImage: '',
-    categoryId: categories[0]?.id || '',
-    driveLink: '',
-    driveDeliveryMethod: 'LINK',
-    status: 'ACTIVE',
-    featured: false,
-  })
+  const [form, setForm] = useState(emptyForm(subCategories[0]?.id || ''))
 
   const filtered = products.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.name.toLowerCase().includes(search.toLowerCase())
+      p.subCategory.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.subCategory.category.name.toLowerCase().includes(search.toLowerCase())
   )
 
   const resetForm = () => {
-    setForm({
-      name: '', slug: '', description: '', price: '', salePrice: '',
-      mainImage: '', categoryId: categories[0]?.id || '',
-      driveLink: '', driveDeliveryMethod: 'LINK', status: 'ACTIVE', featured: false,
-    })
+    setForm(emptyForm(subCategories[0]?.id || ''))
     setEditingProduct(null)
   }
 
@@ -78,7 +81,9 @@ export default function AdminProdutosClient({
       price: product.price.toString(),
       salePrice: product.salePrice?.toString() || '',
       mainImage: product.mainImage,
-      categoryId: product.categoryId,
+      images: product.images || [],
+      youtubeUrl: product.youtubeUrl || '',
+      subCategoryId: product.subCategoryId,
       driveLink: product.driveLink,
       driveDeliveryMethod: product.driveDeliveryMethod,
       status: product.status,
@@ -93,18 +98,20 @@ export default function AdminProdutosClient({
     try {
       const url = editingProduct ? `/api/admin/products/${editingProduct.id}` : '/api/admin/products'
       const method = editingProduct ? 'PUT' : 'POST'
+      const payload = {
+        ...form,
+        price: parseFloat(form.price),
+        salePrice: form.salePrice ? parseFloat(form.salePrice) : null,
+        youtubeUrl: form.youtubeUrl || null,
+      }
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          price: parseFloat(form.price),
-          salePrice: form.salePrice ? parseFloat(form.salePrice) : null,
-        }),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erro')
-      
+
       if (editingProduct) {
         setProducts(products.map(p => p.id === editingProduct.id ? { ...p, ...data.product } : p))
         toast.success('Produto atualizado!')
@@ -132,6 +139,14 @@ export default function AdminProdutosClient({
       toast.error('Erro ao excluir produto')
     }
   }
+
+  // Group subCategories by parent category
+  const groupedSubCategories = subCategories.reduce((acc, sub) => {
+    const catName = sub.category.name
+    if (!acc[catName]) acc[catName] = []
+    acc[catName].push(sub)
+    return acc
+  }, {} as Record<string, SubCategory[]>)
 
   return (
     <div className="space-y-6">
@@ -162,7 +177,7 @@ export default function AdminProdutosClient({
         />
       </div>
 
-      {/* Lista */}
+      {/* Tabela */}
       <div className="bg-[#0d0d0d] border border-white/10 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -193,17 +208,28 @@ export default function AdminProdutosClient({
                           </div>
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
-                            <Package className="text-white/20" size={16} />
+                            <Package size={16} className="text-white/20" />
                           </div>
                         )}
                         <div>
                           <p className="text-sm font-medium text-white">{product.name}</p>
-                          <p className="text-xs text-white/30">{product.slug}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-white/30">{product.slug}</p>
+                            {product.youtubeUrl && (
+                              <Youtube size={12} className="text-red-400" title="Tem vídeo YouTube" />
+                            )}
+                            {product.images?.length > 0 && (
+                              <span className="text-xs text-white/20">📷 {product.images.length}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="p-4 hidden sm:table-cell">
-                      <span className="badge-neon">{product.category.name}</span>
+                      <div>
+                        <span className="badge-neon">{product.subCategory.name}</span>
+                        <p className="text-xs text-white/30 mt-1">{product.subCategory.category.name}</p>
+                      </div>
                     </td>
                     <td className="p-4">
                       <div>
@@ -276,6 +302,7 @@ export default function AdminProdutosClient({
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Nome */}
                 <div>
                   <label className="block text-xs text-white/60 mb-1">Nome *</label>
                   <input
@@ -287,6 +314,7 @@ export default function AdminProdutosClient({
                   />
                 </div>
 
+                {/* Slug */}
                 <div>
                   <label className="block text-xs text-white/60 mb-1">Slug</label>
                   <input
@@ -297,6 +325,7 @@ export default function AdminProdutosClient({
                   />
                 </div>
 
+                {/* Descrição */}
                 <div>
                   <label className="block text-xs text-white/60 mb-1">Descrição *</label>
                   <textarea
@@ -308,6 +337,7 @@ export default function AdminProdutosClient({
                   />
                 </div>
 
+                {/* Preços */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-white/60 mb-1">Preço (R$) *</label>
@@ -336,33 +366,62 @@ export default function AdminProdutosClient({
                   </div>
                 </div>
 
+                {/* Imagem Principal */}
+                <ImageUpload
+                  label="Imagem Principal"
+                  required
+                  value={form.mainImage}
+                  onChange={(url) => setForm({ ...form, mainImage: url })}
+                />
+
+                {/* Múltiplas Imagens */}
+                <MultiImageUpload
+                  label="Galeria de Imagens"
+                  images={form.images}
+                  onChange={(imgs) => setForm({ ...form, images: imgs })}
+                />
+
+                {/* YouTube URL */}
                 <div>
-                  <label className="block text-xs text-white/60 mb-1">Imagem Principal (URL) *</label>
+                  <label className="block text-xs text-white/60 mb-1 flex items-center gap-1.5">
+                    <Youtube size={13} className="text-red-400" />
+                    Link do YouTube (opcional)
+                  </label>
                   <input
-                    required
-                    value={form.mainImage}
-                    onChange={(e) => setForm({ ...form, mainImage: e.target.value })}
+                    type="url"
+                    value={form.youtubeUrl}
+                    onChange={(e) => setForm({ ...form, youtubeUrl: e.target.value })}
                     className="input-dark"
-                    placeholder="https://..."
+                    placeholder="https://www.youtube.com/watch?v=..."
                   />
+                  <p className="text-xs text-white/30 mt-1">
+                    O vídeo aparecerá como primeiro item no carrossel do produto
+                  </p>
                 </div>
 
+                {/* Sub-Categoria */}
                 <div>
-                  <label className="block text-xs text-white/60 mb-1">Categoria *</label>
+                  <label className="block text-xs text-white/60 mb-1">Sub-Categoria *</label>
                   <select
                     required
-                    value={form.categoryId}
-                    onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                    value={form.subCategoryId}
+                    onChange={(e) => setForm({ ...form, subCategoryId: e.target.value })}
                     className="input-dark"
                   >
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id} style={{ background: '#0d0d0d' }}>
-                        {cat.name}
-                      </option>
+                    <option value="" style={{ background: '#0d0d0d' }}>Selecione uma sub-categoria</option>
+                    {Object.entries(groupedSubCategories).map(([catName, subs]) => (
+                      <optgroup key={catName} label={catName}>
+                        {subs.map((sub) => (
+                          <option key={sub.id} value={sub.id} style={{ background: '#0d0d0d' }}>
+                            {sub.name}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>
 
+                {/* Drive */}
                 <div>
                   <label className="block text-xs text-white/60 mb-1">Link do Google Drive *</label>
                   <input
@@ -387,6 +446,7 @@ export default function AdminProdutosClient({
                   </select>
                 </div>
 
+                {/* Status + Featured */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-white/60 mb-1">Status</label>
@@ -412,6 +472,7 @@ export default function AdminProdutosClient({
                   </div>
                 </div>
 
+                {/* Buttons */}
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
@@ -434,16 +495,5 @@ export default function AdminProdutosClient({
         )}
       </AnimatePresence>
     </div>
-  )
-}
-
-// Ícone de Package local (fallback)
-function Package({ className, size }: { className?: string; size?: number }) {
-  return (
-    <svg width={size || 16} height={size || 16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
-      <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
-      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-      <line x1="12" y1="22.08" x2="12" y2="12"/>
-    </svg>
   )
 }

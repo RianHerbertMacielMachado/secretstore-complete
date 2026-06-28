@@ -4,7 +4,11 @@ import AdminConfiguracoesClient from '@/components/admin/AdminConfiguracoesClien
 export const dynamic = 'force-dynamic'
 
 export default async function AdminConfiguracoesPage() {
-  const configs = await prisma.siteConfig.findMany()
+  const [configs, storeSettings] = await Promise.all([
+    prisma.siteConfig.findMany(),
+    prisma.storeSettings.findFirst(),
+  ])
+
   const configMap = Object.fromEntries(configs.map((c) => [c.key, c.value]))
 
   const envStatus = {
@@ -25,6 +29,7 @@ export default async function AdminConfiguracoesPage() {
       configMap={configMap}
       envStatus={envStatus}
       webhookBase={webhookBase}
+      discordUrl={storeSettings?.discordUrl ?? null}
     />
   )
 }

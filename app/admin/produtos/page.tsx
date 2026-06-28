@@ -4,18 +4,33 @@ import AdminProdutosClient from '@/components/admin/AdminProdutosClient'
 export const dynamic = 'force-dynamic'
 
 export default async function AdminProdutosPage() {
-  const [products, categories] = await Promise.all([
+  const [products, subCategories] = await Promise.all([
     prisma.product.findMany({
-      include: { category: { select: { name: true } } },
+      include: {
+        subCategory: {
+          select: {
+            id: true,
+            name: true,
+            category: { select: { id: true, name: true } },
+          },
+        },
+        productImages: { orderBy: { order: 'asc' } },
+      },
       orderBy: { createdAt: 'desc' },
     }),
-    prisma.category.findMany({ orderBy: { sortOrder: 'asc' } }),
+    prisma.subCategory.findMany({
+      include: { category: { select: { id: true, name: true } } },
+      orderBy: [{ category: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
+    }),
   ])
 
   return (
     <AdminProdutosClient
-      products={products.map(p => ({ ...p, images: JSON.parse(p.images || '[]') }))}
-      categories={categories}
+      products={products.map(p => ({
+        ...p,
+        images: p.productImages.map((img) => img.url),
+      }))}
+      subCategories={subCategories}
     />
   )
 }

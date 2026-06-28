@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
-  LayoutDashboard, Package, FolderOpen, ShoppingCart, Users,
+  LayoutDashboard, Package, FolderOpen, Layers, ShoppingCart, Users,
   Tag, Settings, BookOpen, Palette, Menu, X, ChevronRight
 } from 'lucide-react'
 import { cn } from '@/lib/utils/helpers'
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/produtos', label: 'Produtos', icon: Package },
   { href: '/admin/categorias', label: 'Categorias', icon: FolderOpen },
+  { href: '/admin/subcategorias', label: 'Sub-Categorias', icon: Layers },
   { href: '/admin/pedidos', label: 'Pedidos', icon: ShoppingCart },
   { href: '/admin/clientes', label: 'Clientes', icon: Users },
   { href: '/admin/cupons', label: 'Cupons', icon: Tag },

@@ -11,20 +11,20 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String?
-  role      String   @default("CUSTOMER")
-  googleId  String?
-  discordId String?
-  avatar    String?
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String?
+  role          String    @default("CUSTOMER")
+  googleId      String?
+  discordId     String?
+  avatar        String?
   emailVerified DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
-  accounts  Account[]
-  sessions  Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        Order[]
+  accounts      Account[]
+  sessions      Session[]
 }
 
 model Account {
@@ -61,7 +61,22 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// ── Hierarquia: Category → SubCategory → Product ──────────────────────────────
+
 model Category {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  description   String?
+  image         String?
+  isVisible     Boolean       @default(true)
+  sortOrder     Int           @default(0)
+  subCategories SubCategory[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model SubCategory {
   id          String    @id @default(cuid())
   name        String
   slug        String    @unique
@@ -69,30 +84,44 @@ model Category {
   image       String?
   isVisible   Boolean   @default(true)
   sortOrder   Int       @default(0)
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
 
 model Product {
-  id                  String      @id @default(cuid())
+  id                  String         @id @default(cuid())
   name                String
-  slug                String      @unique
+  slug                String         @unique
   description         String
   price               Float
   salePrice           Float?
   mainImage           String
-  images              String      @default("[]")
-  categoryId          String
-  category            Category    @relation(fields: [categoryId], references: [id])
-  driveLink           String      @default("")
-  driveDeliveryMethod String      @default("LINK")
-  status              String      @default("ACTIVE")
-  featured            Boolean     @default(false)
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  youtubeUrl          String?
+  subCategoryId       String
+  subCategory         SubCategory    @relation(fields: [subCategoryId], references: [id])
+  productImages       ProductImage[]
+  driveLink           String         @default("")
+  driveDeliveryMethod String         @default("LINK")
+  status              String         @default("ACTIVE")
+  featured            Boolean        @default(false)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
   orderItems          OrderItem[]
 }
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  url       String
+  order     Int      @default(0)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+// ── Orders ─────────────────────────────────────────────────────────────────────
 
 model Order {
   id                  String      @id @default(cuid())
@@ -142,11 +171,16 @@ model Coupon {
 }
 
 model SiteConfig {
-  id          String  @id @default(cuid())
-  key         String  @unique
+  id          String   @id @default(cuid())
+  key         String   @unique
   value       String
-  isEncrypted Boolean @default(false)
+  isEncrypted Boolean  @default(false)
   updatedAt   DateTime @updatedAt
+}
+
+model StoreSettings {
+  id         String  @id @default(cuid())
+  discordUrl String?
 }
 
 model WebhookLog {

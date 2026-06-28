@@ -8,7 +8,14 @@ export async function GET(
   try {
     const product = await prisma.product.findUnique({
       where: { slug: params.slug, status: 'ACTIVE' },
-      include: { category: true },
+      include: {
+        subCategory: {
+          include: {
+            category: true,
+          },
+        },
+        productImages: { orderBy: { order: 'asc' } },
+      },
     })
 
     if (!product) {
@@ -17,7 +24,8 @@ export async function GET(
 
     return NextResponse.json({
       ...product,
-      images: JSON.parse(product.images || '[]'),
+      images: product.productImages.map((img) => img.url),
+      category: product.subCategory.category,
     })
   } catch (error) {
     console.error('[PRODUCT SLUG]', error)

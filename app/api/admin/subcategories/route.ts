@@ -9,19 +9,29 @@ async function checkAdmin() {
   return session && (session.user as any)?.role === 'ADMIN'
 }
 
-export async function GET() {
-  const categories = await prisma.category.findMany({
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const categoryId = searchParams.get('categoryId')
+
+  const where = categoryId ? { categoryId } : {}
+
+  const subCategories = await prisma.subCategory.findMany({
+    where,
+    include: {
+      category: { select: { id: true, name: true } },
+      _count: { select: { products: true } },
+    },
     orderBy: { sortOrder: 'asc' },
-    include: { _count: { select: { subCategories: true } } },
   })
-  return NextResponse.json({ categories })
+
+  return NextResponse.json({ subCategories })
 }
 
 export async function POST(req: NextRequest) {
   if (!await checkAdmin()) return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
   try {
     const body = await req.json()
-    const category = await prisma.category.create({
+    const subCategory = await prisma.subCategory.create({
       data: {
         name: body.name,
         slug: slugify(body.slug || body.name),
@@ -29,10 +39,14 @@ export async function POST(req: NextRequest) {
         image: body.image || null,
         isVisible: body.isVisible ?? true,
         sortOrder: body.sortOrder || 0,
+        categoryId: body.categoryId,
       },
-      include: { _count: { select: { subCategories: true } } },
+      include: {
+        category: { select: { id: true, name: true } },
+        _count: { select: { products: true } },
+      },
     })
-    return NextResponse.json({ category }, { status: 201 })
+    return NextResponse.json({ subCategory }, { status: 201 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

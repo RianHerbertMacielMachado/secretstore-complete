@@ -20,23 +20,26 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function StoreGroupLayout({ children }: { children: React.ReactNode }) {
-  // Busca todos os configs necessários de uma vez só
-  const configs = await prisma.siteConfig.findMany({
-    where: {
-      key: { in: ['active_layout', 'store_name', 'site_name', 'site_description'] },
-    },
-  })
+  // Busca todos os configs necessários e as configurações da loja de uma vez
+  const [configs, storeSettings] = await Promise.all([
+    prisma.siteConfig.findMany({
+      where: {
+        key: { in: ['active_layout', 'store_name', 'site_name', 'site_description'] },
+      },
+    }),
+    prisma.storeSettings.findFirst(),
+  ])
 
   const map = Object.fromEntries(configs.map((c) => [c.key, c.value]))
 
   const activeLayout = map.active_layout || 'dark-grunge'
-  // Fallback: se ainda não salvou com store_name, usa site_name (chave antiga)
-  const storeName    = map.store_name || map.site_name || 'DarkShop'
+  const storeName = map.store_name || map.site_name || 'DarkShop'
+  const discordUrl = storeSettings?.discordUrl ?? null
 
   return (
     <>
       <LayoutThemeApplier layout={activeLayout} />
-      <StoreLayout storeName={storeName}>
+      <StoreLayout storeName={storeName} discordUrl={discordUrl}>
         {children}
       </StoreLayout>
     </>

@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ShoppingCart, Tag, Star, ChevronLeft } from 'lucide-react'
+import { ShoppingCart, Star } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils/helpers'
 import { useCartStore } from '@/stores/cartStore'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import ProductCarousel from '@/components/store/ProductCarousel'
 
 interface Product {
   id: string
@@ -17,7 +17,13 @@ interface Product {
   salePrice: number | null
   mainImage: string
   images: string[]
-  category: { name: string; slug: string }
+  youtubeUrl?: string | null
+  subCategory: {
+    id: string
+    name: string
+    slug: string
+    category: { id: string; name: string; slug: string }
+  }
   driveDeliveryMethod: string
 }
 
@@ -28,7 +34,6 @@ export default function ProductDetailClient({
   product: Product
   related: Product[]
 }) {
-  const [selectedImage, setSelectedImage] = useState(product.mainImage)
   const addItem = useCartStore((s) => s.addItem)
 
   const currentPrice = product.salePrice ?? product.price
@@ -36,8 +41,6 @@ export default function ProductDetailClient({
   const discountPct = hasDiscount
     ? Math.round(((product.price - currentPrice) / product.price) * 100)
     : 0
-
-  const allImages = [product.mainImage, ...(product.images.filter(i => i !== product.mainImage))]
 
   const handleAddToCart = () => {
     addItem({
@@ -52,58 +55,60 @@ export default function ProductDetailClient({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-white/40 mb-8">
+      {/* Breadcrumb — Categoria > Sub-Categoria > Produto */}
+      <div className="flex items-center gap-2 text-sm text-white/40 mb-8 flex-wrap">
         <Link href="/" className="hover:text-neon-pink transition-colors">Início</Link>
         <span>/</span>
-        <Link href={`/categorias/${product.category.slug}`} className="hover:text-neon-pink transition-colors">
-          {product.category.name}
+        <Link
+          href={`/categorias/${product.subCategory.category.slug}`}
+          className="hover:text-neon-pink transition-colors"
+        >
+          {product.subCategory.category.name}
+        </Link>
+        <span>/</span>
+        <Link
+          href={`/categorias/${product.subCategory.category.slug}/${product.subCategory.slug}`}
+          className="hover:text-neon-pink transition-colors"
+        >
+          {product.subCategory.name}
         </Link>
         <span>/</span>
         <span className="text-white/70">{product.name}</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Imagens */}
+        {/* Carrossel de Mídia */}
         <div>
-          <motion.div
-            key={selectedImage}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="relative aspect-square rounded-2xl overflow-hidden mb-4"
-            style={{ boxShadow: '0 0 40px rgba(255,0,127,0.15)' }}
-          >
-            <img src={selectedImage} alt={product.name} className="w-full h-full object-cover" />
-            {hasDiscount && (
-              <div className="absolute top-4 left-4 px-3 py-1.5 bg-neon-pink text-black text-sm font-bold rounded-full shadow-neon">
-                -{discountPct}%
-              </div>
-            )}
-          </motion.div>
-
-          {/* Thumbnails */}
-          {allImages.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto no-scrollbar">
-              {allImages.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImage(img)}
-                  className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                    selectedImage === img ? 'border-neon-pink shadow-neon-sm' : 'border-white/10 hover:border-white/30'
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
+          <ProductCarousel
+            mainImage={product.mainImage}
+            images={product.images}
+            youtubeUrl={product.youtubeUrl}
+            productName={product.name}
+            discountBadge={
+              hasDiscount ? (
+                <div className="px-3 py-1.5 bg-neon-pink text-black text-sm font-bold rounded-full shadow-neon">
+                  -{discountPct}%
+                </div>
+              ) : null
+            }
+          />
         </div>
 
         {/* Info */}
         <div>
-          <div className="mb-2">
-            <Link href={`/categorias/${product.category.slug}`} className="badge-neon text-xs">
-              {product.category.name}
+          <div className="mb-2 flex items-center gap-2 flex-wrap">
+            <Link
+              href={`/categorias/${product.subCategory.category.slug}`}
+              className="badge-neon text-xs"
+            >
+              {product.subCategory.category.name}
+            </Link>
+            <span className="text-white/20 text-xs">›</span>
+            <Link
+              href={`/categorias/${product.subCategory.category.slug}/${product.subCategory.slug}`}
+              className="text-xs px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-neon-pink hover:border-neon-pink/40 transition-all"
+            >
+              {product.subCategory.name}
             </Link>
           </div>
 
@@ -144,7 +149,7 @@ export default function ProductDetailClient({
             <span>Entrega imediata via Google Drive após confirmação do pagamento</span>
           </div>
 
-          {/* Botão */}
+          {/* Botão Comprar */}
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={handleAddToCart}
@@ -174,8 +179,10 @@ export default function ProductDetailClient({
             {related.map((p) => (
               <Link key={p.id} href={`/produtos/${p.slug}`}>
                 <div className="card-product group h-56">
-                  <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                    style={{ backgroundImage: `url(${p.mainImage})` }} />
+                  <div
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                    style={{ backgroundImage: `url(${p.mainImage})` }}
+                  />
                   <div className="absolute inset-0 bg-card-overlay" />
                   <div className="absolute bottom-0 p-4">
                     <p className="text-white text-sm font-medium">{p.name}</p>

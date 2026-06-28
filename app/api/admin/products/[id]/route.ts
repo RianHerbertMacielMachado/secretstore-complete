@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/auth-options'
 import { prisma } from '@/lib/prisma'
+import { slugify } from '@/lib/utils/helpers'
 
 async function checkAdmin() {
   const session = await getServerSession(authOptions)
@@ -12,25 +13,63 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!await checkAdmin()) return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
   try {
     const body = await req.json()
-    const product = await prisma.product.update({
+    const { images, ...rest } = body
+
+    // Update product fields
+    await prisma.product.update({
       where: { id: params.id },
       data: {
-        name: body.name,
-        slug: body.slug,
-        description: body.description,
-        price: parseFloat(body.price),
-        salePrice: body.salePrice ? parseFloat(body.salePrice) : null,
-        mainImage: body.mainImage,
-        images: JSON.stringify(body.images || []),
-        categoryId: body.categoryId,
-        driveLink: body.driveLink,
-        driveDeliveryMethod: body.driveDeliveryMethod,
-        status: body.status,
-        featured: body.featured,
+        name: rest.name,
+        slug: rest.slug ? slugify(rest.slug) : undefined,
+        description: rest.description,
+        price: parseFloat(rest.price),
+        salePrice: rest.salePrice ? parseFloat(rest.salePrice) : null,
+        mainImage: rest.mainImage,
+        youtubeUrl: rest.youtubeUrl || null,
+        subCategoryId: rest.subCategoryId,
+        driveLink: rest.driveLink,
+        driveDeliveryMethod: rest.driveDeliveryMethod,
+        status: rest.status,
+        featured: rest.featured,
       },
-      include: { category: { select: { name: true } } },
     })
-    return NextResponse.json({ product: { ...product, images: JSON.parse(product.images) } })
+
+    // Replace all product images
+    if (Array.isArray(images)) {
+      await prisma.productImage.deleteMany({ where: { productId: params.id } })
+      if (images.length > 0) {
+        await prisma.productImage.createMany({
+          data: images
+            .filter(Boolean)
+            .map((url: string, idx: number) => ({
+              url,
+              order: idx,
+              productId: params.id,
+            })),
+        })
+      }
+    }
+
+    const product = await prisma.product.findUnique({
+      where: { id: params.id },
+      include: {
+        subCategory: {
+          select: {
+            id: true,
+            name: true,
+            category: { select: { id: true, name: true } },
+          },
+        },
+        productImages: { orderBy: { order: 'asc' } },
+      },
+    })
+
+    return NextResponse.json({
+      product: {
+        ...product,
+        images: product?.productImages.map((img) => img.url) ?? [],
+      },
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
