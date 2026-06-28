@@ -1,21 +1,19 @@
 # nixpacks.toml
 # Controla as fases do build no Railway/Nixpacks
 #
-# Problema: o BuildKit mantém um cache de node_modules entre builds.
-# Quando o cache contém um node_modules corrompido/incompleto de builds
-# anteriores, o 'npm install' retorna 'up to date' sem reinstalar nada,
-# causando MODULE_NOT_FOUND para node_modules/prisma/build/index.js.
+# Problema: o BuildKit monta /app/node_modules/.cache como volume de cache
+# separado (Device or resource busy). Isso impede 'rm -rf node_modules'.
+# Mas o npm install retorna 'up to date' reutilizando cache corrompido.
 #
-# Solução:
-# 1. Desabilitar a fase install automática do Nixpacks (evita npm ci problemático)
-# 2. No build, remover node_modules antes de instalar (garante fresh install)
+# Solução: usar 'find' para remover tudo em node_modules EXCETO .cache
+# (que é um mount point do BuildKit e não pode ser removido).
 
 [phases.install]
 cmds = []
 
 [phases.build]
 cmds = [
-  "rm -rf node_modules",
+  "find node_modules -mindepth 1 -maxdepth 1 ! -name '.cache' -exec rm -rf {} +",
   "npm install --legacy-peer-deps",
   "node node_modules/prisma/build/index.js generate",
   "npm run build",
