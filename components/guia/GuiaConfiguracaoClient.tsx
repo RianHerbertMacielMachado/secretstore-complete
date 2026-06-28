@@ -189,24 +189,45 @@ const SECTIONS: GuiaSection[] = [
     title: '6. Google Drive API',
     icon: '📁',
     checkKey: 'google_drive',
-    description: 'Entrega automática de arquivos via Google Drive após pagamento',
+    description: 'Entrega automática de arquivos e pastas — concede acesso individual a cada cliente via Drive API',
     steps: [
       {
+        title: 'Entenda os 3 métodos de entrega',
+        content: 'No cadastro de cada produto você escolhe como o arquivo será entregue:\n\n📎 Link Direto — envia o link por e-mail. Qualquer pessoa com o link acessa. Bom para produtos de baixo valor ou gratuitos.\n\n📁 Pasta Compartilhada — igual ao Link Direto, mas aponta para uma pasta com vários arquivos. Ideal para packs/cursos públicos.\n\n🔐 Conceder Permissão — usa a Google Drive API para compartilhar o arquivo ou pasta EXCLUSIVAMENTE com o e-mail do cliente que pagou. Quem não comprou recebe erro de acesso negado. Recomendado para produtos de alto valor.',
+      },
+      {
+        title: 'Pré-requisito: ativar a Google Drive API no projeto',
+        content: 'Acesse o Google Cloud Console. Se ainda não tem um projeto, crie um (ex: "DarkShop").\n\nNo menu lateral vá em "APIs e Serviços" → "Biblioteca" → pesquise "Google Drive API" → clique em "Ativar".\n\n⚠️ Sem essa API ativada o service account não consegue gerenciar permissões.',
+        link: { label: 'Abrir Google Cloud Console', url: 'https://console.cloud.google.com' },
+      },
+      {
         title: 'Criar Service Account',
-        content: 'No Google Cloud Console, vá em "IAM & Admin" → "Service Accounts" → "Create Service Account".\n\nNome: darkshop-drive\nClique em "Create and Continue" → "Done".',
+        content: 'No menu lateral do Cloud Console vá em "IAM & Admin" → "Contas de serviço" → "Criar conta de serviço".\n\nPreencha:\n• Nome: darkshop-drive\n• Descrição: Entrega de produtos digitais DarkShop\n\nClique em "Criar e continuar". Na tela de permissões pode clicar em "Continuar" sem selecionar nada. Depois clique em "Concluir".',
       },
       {
-        title: 'Gerar Chave JSON',
-        content: 'Clique no service account criado → "Keys" → "Add Key" → "Create new key" → JSON → "Create".\n\nUm arquivo JSON será baixado. GUARDE COM SEGURANÇA!',
+        title: 'Gerar chave JSON da conta de serviço',
+        content: 'Na lista de contas de serviço, clique na que você criou → aba "Chaves" → "Adicionar chave" → "Criar nova chave" → JSON → "Criar".\n\nUm arquivo .json será baixado com dois campos importantes:\n• client_email — o e-mail da conta de serviço\n• private_key — a chave RSA privada\n\n🔒 GUARDE COM SEGURANÇA. Nunca commite no GitHub.',
       },
       {
-        title: 'Extrair Credenciais do JSON',
-        content: 'Abra o arquivo JSON baixado e copie os campos:\n• client_email\n• private_key',
-        code: 'GOOGLE_SERVICE_ACCOUNT_EMAIL=darkshop-drive@seu-projeto.iam.gserviceaccount.com\nGOOGLE_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\\n...\\n-----END RSA PRIVATE KEY-----\\n"',
+        title: 'Configurar as variáveis de ambiente',
+        content: 'Abra o arquivo JSON baixado e copie os dois campos:\n\n• "client_email" → vira GOOGLE_SERVICE_ACCOUNT_EMAIL\n• "private_key" → vira GOOGLE_PRIVATE_KEY\n\nAtenção com a private_key: ela tem quebras de linha reais (\\n). No arquivo .env ou no Railway, certifique-se que estão como \\n (dois caracteres) e não quebras reais:',
+        code: 'GOOGLE_SERVICE_ACCOUNT_EMAIL=darkshop-drive@seu-projeto.iam.gserviceaccount.com\nGOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\nMIIEvQIBADANBgkq...CHAVE_COMPLETA...\\n-----END PRIVATE KEY-----\\n"',
       },
       {
-        title: 'Compartilhar Pastas',
-        content: 'Para cada pasta de produto no Google Drive:\n1. Clique com botão direito → "Compartilhar"\n2. Adicione o email do service account\n3. Permissão: "Editor" ou "Visualizador"\n\nO serviço poderá então conceder acesso aos clientes.',
+        title: 'Compartilhar os arquivos/pastas com o service account',
+        content: 'Este é o passo mais importante para o método "Conceder Permissão" funcionar.\n\nPara CADA arquivo ou pasta que você vai vender:\n1. Abra o Google Drive\n2. Clique com botão direito no arquivo/pasta → "Compartilhar"\n3. Cole o GOOGLE_SERVICE_ACCOUNT_EMAIL no campo de e-mail\n4. Defina a permissão como "Editor" (necessário para que o service account consiga re-compartilhar com clientes)\n5. Desmarque "Notificar pessoas" → clique em "Compartilhar"\n\n✅ Feito. O service account agora pode conceder e revogar acesso de outras pessoas neste recurso.',
+      },
+      {
+        title: 'Configurar o produto no painel admin',
+        content: 'Ao criar ou editar um produto no admin:\n\n1. Cole a URL do arquivo ou pasta no campo "Link do Drive"\n   Formatos aceitos:\n   • https://drive.google.com/file/d/ID_ARQUIVO/view  (arquivo)\n   • https://drive.google.com/drive/folders/ID_PASTA  (pasta)\n\n2. Selecione o método de entrega:\n   • "Conceder Permissão" → acesso protegido por e-mail (recomendado)\n   • "Link Direto" → link público enviado por e-mail\n   • "Pasta Compartilhada" → link de pasta pública enviado por e-mail\n\nApós pagamento confirmado, o sistema chama a Drive API, compartilha com o e-mail do cliente e depois envia o e-mail de entrega com o link.',
+      },
+      {
+        title: 'Configurar no Railway (produção)',
+        content: 'No painel do Railway, acesse seu serviço → aba "Variables" → adicione:\n\n1. GOOGLE_SERVICE_ACCOUNT_EMAIL\n   Valor: o client_email do JSON\n   Ex: darkshop-drive@seu-projeto.iam.gserviceaccount.com\n\n2. GOOGLE_PRIVATE_KEY\n   Valor: a private_key completa, com -----BEGIN/END PRIVATE KEY----- e com \\n substituindo as quebras de linha.\n\n💡 Dica: Se a chave apresentar erro de parse, tente colar sem as aspas externas — o Railway trata o valor como string automaticamente.',
+      },
+      {
+        title: 'Verificar se está funcionando',
+        content: 'Formas de confirmar que a integração está ativa:\n\n1. Painel admin → Configurações → Status das Integrações → "Google Drive" deve mostrar ✓ OK\n\n2. Nos logs do Railway após uma compra você verá:\n   [DRIVE] Permissão concedida para cliente@email.com no recurso ABC123 (arquivo)\n   ou\n   [DRIVE] Permissão concedida para cliente@email.com no recurso XYZ456 (pasta)\n\n3. No Google Drive → clique com botão direito no arquivo/pasta → "Compartilhar" → o e-mail do cliente deve aparecer na lista de pessoas com acesso.',
       },
     ],
     envVars: ['GOOGLE_SERVICE_ACCOUNT_EMAIL', 'GOOGLE_PRIVATE_KEY'],
@@ -337,9 +358,11 @@ PAYPAL_MODE=sandbox
 PICPAY_TOKEN=
 PICPAY_SELLER_TOKEN=
 
-# ===== GOOGLE DRIVE =====
-GOOGLE_SERVICE_ACCOUNT_EMAIL=
-GOOGLE_PRIVATE_KEY=
+# ===== GOOGLE DRIVE (método "Conceder Permissão") =====
+# client_email do arquivo JSON da service account
+GOOGLE_SERVICE_ACCOUNT_EMAIL=darkshop-drive@seu-projeto.iam.gserviceaccount.com
+# private_key do JSON — substitua quebras de linha por \n e envolva em aspas
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nSUA_CHAVE_AQUI\n-----END PRIVATE KEY-----\n"
 
 # ===== EMAIL =====
 EMAIL_HOST=smtp.gmail.com
@@ -396,7 +419,9 @@ NEXT_PUBLIC_SITE_NAME=DarkShop`,
 ☐ Checkout gerando pedido
 ☐ Webhook Mercado Pago recebendo (use ngrok para testar)
 ☐ Email de confirmação sendo enviado
-☐ Link do Drive sendo entregue após pagamento`,
+☐ Link do Drive sendo entregue após pagamento
+☐ [Conceder Permissão] Logs mostram "[DRIVE] Permissão concedida para..."
+☐ [Conceder Permissão] E-mail do cliente aparece no compartilhamento do Drive`,
       },
       {
         title: 'Testar Webhooks em Produção',
@@ -431,7 +456,10 @@ NEXT_PUBLIC_SITE_NAME=DarkShop`,
 🔴 Webhook não chega → Use ngrok para testar localmente
 🔴 Banco não conecta → Verifique DATABASE_URL e execute db:push
 🔴 Email não envia → Verifique SMTP e senha de app do Gmail
-🔴 Drive não entrega → Verifique permissões do service account`,
+🔴 Drive não entrega → Verifique se GOOGLE_SERVICE_ACCOUNT_EMAIL e GOOGLE_PRIVATE_KEY estão configurados
+🔴 "[DRIVE] Falha ao conceder permissão" → Service account não é Editor do arquivo/pasta. Abra o Drive, compartilhe o arquivo com o e-mail do service account como "Editor"
+🔴 GOOGLE_PRIVATE_KEY inválida → Certifique-se de que quebras de linha estão como \\n (dois caracteres) e mantenha as linhas BEGIN/END PRIVATE KEY
+🔴 Drive API não autorizada → Ative a "Google Drive API" no Google Cloud Console → APIs e Serviços → Biblioteca`,
       },
       {
         title: 'Suporte e Recursos',
