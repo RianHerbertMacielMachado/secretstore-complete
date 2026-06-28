@@ -55,8 +55,43 @@ async function main() {
   })
   console.log('✅ Categorias criadas')
 
+  // Criar sub-categorias (uma por categoria como padrão)
+  const sub1 = await prisma.subCategory.upsert({
+    where: { slug: 'ebooks-geral' },
+    update: {},
+    create: {
+      name: 'Geral',
+      slug: 'ebooks-geral',
+      categoryId: cat1.id,
+      sortOrder: 1,
+    },
+  })
+
+  const sub2 = await prisma.subCategory.upsert({
+    where: { slug: 'cursos-geral' },
+    update: {},
+    create: {
+      name: 'Geral',
+      slug: 'cursos-geral',
+      categoryId: cat2.id,
+      sortOrder: 1,
+    },
+  })
+
+  const sub3 = await prisma.subCategory.upsert({
+    where: { slug: 'templates-geral' },
+    update: {},
+    create: {
+      name: 'Geral',
+      slug: 'templates-geral',
+      categoryId: cat3.id,
+      sortOrder: 1,
+    },
+  })
+  console.log('✅ Sub-Categorias criadas')
+
   // Criar produtos de exemplo
-  await prisma.product.upsert({
+  const p1 = await prisma.product.upsert({
     where: { slug: 'ebook-dark-aesthetic' },
     update: {},
     create: {
@@ -66,16 +101,23 @@ async function main() {
       price: 29.90,
       salePrice: 19.90,
       mainImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600',
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600',
-      ]),
-      categoryId: cat1.id,
+      subCategoryId: sub1.id,
       driveLink: 'https://drive.google.com/file/d/example',
       featured: true,
     },
   })
+  await prisma.productImage.upsert({
+    where: { id: 'img_seed_p1' },
+    update: {},
+    create: {
+      id: 'img_seed_p1',
+      url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600',
+      order: 0,
+      productId: p1.id,
+    },
+  })
 
-  await prisma.product.upsert({
+  const p2 = await prisma.product.upsert({
     where: { slug: 'curso-design-gothic' },
     update: {},
     create: {
@@ -85,17 +127,24 @@ async function main() {
       price: 197.00,
       salePrice: 97.00,
       mainImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600',
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600',
-      ]),
-      categoryId: cat2.id,
+      subCategoryId: sub2.id,
       driveLink: 'https://drive.google.com/drive/folders/example',
       driveDeliveryMethod: 'FOLDER',
       featured: true,
     },
   })
+  await prisma.productImage.upsert({
+    where: { id: 'img_seed_p2' },
+    update: {},
+    create: {
+      id: 'img_seed_p2',
+      url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600',
+      order: 0,
+      productId: p2.id,
+    },
+  })
 
-  await prisma.product.upsert({
+  const p3 = await prisma.product.upsert({
     where: { slug: 'pack-templates-dark' },
     update: {},
     create: {
@@ -104,12 +153,19 @@ async function main() {
       description: '50 templates editáveis para Instagram com estética gótica e dark. Inclui stories, posts e reels.',
       price: 49.90,
       mainImage: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600',
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600',
-      ]),
-      categoryId: cat3.id,
+      subCategoryId: sub3.id,
       driveLink: 'https://drive.google.com/drive/folders/example',
       featured: false,
+    },
+  })
+  await prisma.productImage.upsert({
+    where: { id: 'img_seed_p3' },
+    update: {},
+    create: {
+      id: 'img_seed_p3',
+      url: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600',
+      order: 0,
+      productId: p3.id,
     },
   })
   console.log('✅ Produtos criados')
@@ -142,6 +198,13 @@ async function main() {
       create: config,
     })
   }
+
+  // StoreSettings padrão
+  await prisma.storeSettings.upsert({
+    where: { id: 'singleton' },
+    update: {},
+    create: { id: 'singleton' },
+  })
   console.log('✅ Configurações iniciais criadas')
 
   console.log('🎉 Seed concluído com sucesso!')

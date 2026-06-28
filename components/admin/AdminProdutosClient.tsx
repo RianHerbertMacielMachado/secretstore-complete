@@ -216,7 +216,9 @@ export default function AdminProdutosClient({ products: initialProducts, subCate
                           <div className="flex items-center gap-2">
                             <p className="text-xs text-white/30">{product.slug}</p>
                             {product.youtubeUrl && (
-                              <Youtube size={12} className="text-red-400" title="Tem vídeo YouTube" />
+                              <span title="Tem vídeo YouTube">
+                                <Youtube size={12} className="text-red-400" />
+                              </span>
                             )}
                             {product.images?.length > 0 && (
                               <span className="text-xs text-white/20">📷 {product.images.length}</span>
