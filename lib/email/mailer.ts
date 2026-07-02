@@ -18,34 +18,41 @@ interface WelcomeEmailParams {
 /**
  * Cria transporter Nodemailer dinamicamente para evitar import estático
  * (Nodemailer usa Node.js APIs não disponíveis no edge runtime)
+ *
+ * Lança erro se as variáveis não estiverem configuradas ou se o import falhar.
+ * O erro é capturado pelo chamador, que decide se retorna false ou relança.
  */
 async function createTransporter() {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    return null
+    throw new Error(
+      `Credenciais SMTP ausentes. Configure EMAIL_USER e EMAIL_PASS nas variáveis de ambiente. ` +
+      `(EMAIL_HOST=${process.env.EMAIL_HOST || 'não definido'}, EMAIL_USER=${process.env.EMAIL_USER || 'não definido'})`
+    )
   }
 
-  try {
-    const nodemailer = await import('nodemailer')
-    return nodemailer.default.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: process.env.EMAIL_PORT === '465',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    })
-  } catch {
-    return null
-  }
+  const nodemailer = await import('nodemailer')
+  return nodemailer.default.createTransport({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT || '587'),
+    secure: process.env.EMAIL_PORT === '465',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  })
 }
 
 /**
  * Email de entrega com links do Google Drive
  */
 export async function sendDeliveryEmail(params: DeliveryEmailParams): Promise<boolean> {
-  const transporter = await createTransporter()
-  if (!transporter) return false
+  let transporter: Awaited<ReturnType<typeof createTransporter>>
+  try {
+    transporter = await createTransporter()
+  } catch (error) {
+    console.error('[EMAIL] Falha ao criar transporter:', error)
+    return false
+  }
 
   try {
     const itemsHtml = params.items
@@ -155,11 +162,46 @@ export async function sendDeliveryEmail(params: DeliveryEmailParams): Promise<bo
 }
 
 /**
+ * Versão de teste que lança o erro ao invés de retornar false.
+ * Usada pelo painel admin para exibir a mensagem real de falha SMTP.
+ */
+export async function sendDeliveryEmailOrThrow(params: DeliveryEmailParams): Promise<void> {
+  const transporter = await createTransporter() // lança se não configurado
+  const itemsHtml = params.items
+    .map(
+      (item) => `
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #1a1a1a;">
+          <strong style="color: #fff;">${item.name}</strong><br/>
+          <a href="${item.link}" style="color:#ff007f;">📥 Baixar / Acessar</a>
+        </td>
+      </tr>`
+    )
+    .join('')
+
+  await transporter.sendMail({
+    from: `"DarkShop" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+    to: params.to,
+    subject: `✅ Pedido #${params.orderId.slice(-8).toUpperCase()} Confirmado — DarkShop (TESTE)`,
+    html: `<body style="background:#000;color:#fff;font-family:sans-serif;padding:20px;">
+      <h2 style="color:#ff007f;">🧪 E-mail de Teste — DarkShop</h2>
+      <p>Olá, <strong>${params.customerName}</strong>! Este é um e-mail de teste enviado pelo painel admin.</p>
+      <table style="width:100%;border-collapse:collapse;"><tbody>${itemsHtml}</tbody></table>
+      <p style="color:rgba(255,255,255,0.4);font-size:12px;margin-top:24px;">Este é um e-mail de teste. Nenhum pedido real foi criado.</p>
+    </body>`,
+  })
+}
+
+/**
  * Email de boas-vindas ao cadastrar
  */
 export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<boolean> {
-  const transporter = await createTransporter()
-  if (!transporter) return false
+  let transporter: Awaited<ReturnType<typeof createTransporter>>
+  try {
+    transporter = await createTransporter()
+  } catch {
+    return false
+  }
 
   try {
     await transporter.sendMail({

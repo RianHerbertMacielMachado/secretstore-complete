@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/auth-options'
 import { prisma } from '@/lib/prisma'
-import { sendDeliveryEmail } from '@/lib/email/mailer'
+import { sendDeliveryEmailOrThrow } from '@/lib/email/mailer'
 import { grantDrivePermission, extractDriveId } from '@/lib/delivery'
 
 // ─── Verificação de admin ────────────────────────────────────────────────────
@@ -102,42 +102,64 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      const sent = await sendDeliveryEmail({
-        to,
-        customerName: 'Teste Admin',
-        orderId: 'TEST-' + Date.now(),
-        items: [
-          {
-            name: 'Produto de Teste',
-            link: 'https://drive.google.com/file/d/exemplo/view',
-            method: 'LINK',
-          },
-        ],
-      })
+      try {
+        await sendDeliveryEmailOrThrow({
+          to,
+          customerName: 'Teste Admin',
+          orderId: 'TEST-' + Date.now(),
+          items: [
+            {
+              name: 'Produto de Teste',
+              link: 'https://drive.google.com/file/d/exemplo/view',
+              method: 'LINK',
+            },
+          ],
+        })
 
-      if (!sent) {
+        return NextResponse.json({
+          success: true,
+          message: `E-mail de teste enviado com sucesso para ${to}.`,
+          detail: JSON.stringify({
+            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+            to,
+            host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+            port: process.env.EMAIL_PORT || '587',
+          }, null, 2),
+        })
+      } catch (smtpError: any) {
+        // Extrai a mensagem real do erro SMTP (ex: "Invalid login", "535 Authentication failed", etc.)
+        const smtpMsg = smtpError?.message || String(smtpError)
+        const smtpCode = smtpError?.responseCode || smtpError?.code || null
+        const smtpResponse = smtpError?.response || null
+
+        let hint = ''
+        if (smtpMsg.includes('Invalid login') || smtpMsg.includes('535') || smtpMsg.includes('Authentication')) {
+          hint = 'Credenciais incorretas. Para o Resend, EMAIL_USER deve ser "resend" e EMAIL_PASS deve ser sua API Key (re_...). Para Gmail, use uma Senha de App (não a senha normal).'
+        } else if (smtpMsg.includes('ECONNREFUSED') || smtpMsg.includes('connect')) {
+          hint = 'Não foi possível conectar ao servidor SMTP. Verifique EMAIL_HOST e EMAIL_PORT.'
+        } else if (smtpMsg.includes('ETIMEDOUT') || smtpMsg.includes('timeout')) {
+          hint = 'Timeout ao conectar ao SMTP. Verifique se a porta não está bloqueada.'
+        } else if (smtpMsg.includes('self signed') || smtpMsg.includes('certificate')) {
+          hint = 'Erro de certificado SSL. Tente EMAIL_PORT=465 com secure=true, ou EMAIL_PORT=587.'
+        }
+
         return NextResponse.json({
           success: false,
-          error: 'Falha ao enviar e-mail. Verifique as credenciais SMTP no log do servidor.',
+          error: `Falha SMTP: ${smtpMsg}${hint ? ` — ${hint}` : ''}`,
           detail: JSON.stringify({
-            EMAIL_HOST: process.env.EMAIL_HOST || 'smtp.gmail.com',
-            EMAIL_PORT: process.env.EMAIL_PORT || '587',
-            EMAIL_USER: process.env.EMAIL_USER,
-            destino: to,
+            smtp_error: smtpMsg,
+            smtp_code: smtpCode,
+            smtp_response: smtpResponse,
+            configuracao: {
+              EMAIL_HOST: process.env.EMAIL_HOST || 'smtp.gmail.com',
+              EMAIL_PORT: process.env.EMAIL_PORT || '587',
+              EMAIL_USER: process.env.EMAIL_USER,
+              EMAIL_FROM: process.env.EMAIL_FROM || '(usa EMAIL_USER)',
+            },
+            dica: hint || null,
           }, null, 2),
         })
       }
-
-      return NextResponse.json({
-        success: true,
-        message: `E-mail de teste enviado com sucesso para ${to}.`,
-        detail: JSON.stringify({
-          from: process.env.EMAIL_USER,
-          to,
-          host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-          port: process.env.EMAIL_PORT || '587',
-        }, null, 2),
-      })
     }
 
     // ── 3. Teste de Link Direto ──────────────────────────────────────────────
