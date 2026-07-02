@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Package, FolderOpen, Layers, ShoppingCart, Users,
-  Tag, Settings, BookOpen, Palette, Menu, X, ChevronRight
+  Tag, Settings, BookOpen, Palette, Menu, X, ChevronRight, FlaskConical
 } from 'lucide-react'
 import { cn } from '@/lib/utils/helpers'
 
@@ -19,6 +19,7 @@ const navItems = [
   { href: '/admin/cupons', label: 'Cupons', icon: Tag },
   { href: '/admin/layouts', label: 'Layouts', icon: Palette },
   { href: '/admin/guia-configuracao', label: 'Guia de Config', icon: BookOpen, highlight: true },
+  { href: '/admin/testes', label: 'Testes', icon: FlaskConical },
   { href: '/admin/configuracoes', label: 'Configurações', icon: Settings },
 ]
 

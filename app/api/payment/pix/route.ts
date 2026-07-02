@@ -200,6 +200,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ paymentStatus: 'PAID', paymentConfirmedAt: order.paymentConfirmedAt })
     }
 
+    // Se tem PIX salvo e não expirou → retorna dados do banco sem consultar MP
+    if (order.pixCopiaECola && order.pixExpiresAt && order.pixExpiresAt > new Date()) {
+      return NextResponse.json({
+        paymentStatus:   order.paymentStatus,
+        pixQrCodeBase64: order.pixQrCodeBase64,
+        pixCopiaECola:   order.pixCopiaECola,
+        pixExpiresAt:    order.pixExpiresAt,
+        paymentId:       order.paymentId,
+      })
+    }
+
     // Consultar status atual no MP (fallback caso webhook tenha falhado)
     const accessToken = process.env.MP_ACCESS_TOKEN || process.env.MP_TEST_TOKEN
     if (order.paymentId && accessToken) {

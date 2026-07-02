@@ -65,20 +65,20 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           <div className="absolute inset-0 border border-transparent group-hover:border-neon-pink/60 rounded-xl transition-all duration-300 shadow-[inset_0_0_0_0_rgba(255,0,127,0)] group-hover:shadow-[inset_0_0_30px_rgba(255,0,127,0.1)]" />
 
           {/* Categoria badge */}
-          <div className="absolute top-4 left-4">
+          <div className="absolute top-3 left-3">
             <span className="badge-neon text-xs">
               {product.category.name}
             </span>
           </div>
 
-          {/* Desconto badge */}
-          {hasDiscount && (
-            <div className="absolute top-4 right-4">
+          {/* Badges direita: OFERTA empilhado (pronto para adicionar DESTAQUE futuramente) */}
+          <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+            {hasDiscount && (
               <span className="px-2 py-0.5 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-medium">
                 OFERTA
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Conteúdo */}
           <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">

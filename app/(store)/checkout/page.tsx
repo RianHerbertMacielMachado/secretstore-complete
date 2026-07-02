@@ -54,16 +54,6 @@ export default function CheckoutPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erro ao criar pedido')
 
-      // Para PIX: já dispara a geração do QR Code em background
-      // (sem bloquear — a página do pedido também faz isso, mas assim fica mais rápido)
-      if (paymentMethod === 'PIX') {
-        fetch('/api/payment/pix', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: data.orderId }),
-        }).catch(() => {/* silencioso — a página faz fallback */})
-      }
-
       clearCart()
       router.push(`/pedido/${data.orderId}?method=${paymentMethod}`)
       toast.success('Pedido criado! Complete o pagamento.')

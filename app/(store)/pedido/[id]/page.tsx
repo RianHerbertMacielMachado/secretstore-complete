@@ -62,9 +62,43 @@ function PixPaymentBlock({ orderId }: { orderId: string }) {
   const paidRef = useRef(false)
 
   // Gerar PIX ao montar
+  // Estratégia: primeiro consulta GET para ver se já existe PIX salvo no banco.
+  // Se existir (cached), usa sem chamar MP. Se não existir, chama POST para gerar.
+  // Isso evita race condition quando checkout e página disparam POST ao mesmo tempo.
   const generatePix = useCallback(async () => {
     setPix((prev) => ({ ...prev, loading: true, error: null }))
     try {
+      // 1. Tentar recuperar PIX já existente (GET)
+      const getRes = await fetch(`/api/payment/pix?orderId=${orderId}`)
+      if (getRes.ok) {
+        const getData = await getRes.json()
+        // Se banco já tem copia-e-cola → usar sem chamar MP novamente
+        if (getData.pixCopiaECola) {
+          setPix({
+            pixQrCodeBase64: getData.pixQrCodeBase64 ?? null,
+            pixCopiaECola: getData.pixCopiaECola,
+            pixExpiresAt: getData.pixExpiresAt ?? null,
+            paymentId: getData.paymentId ?? null,
+            paymentStatus: getData.paymentStatus,
+            error: null,
+            loading: false,
+          })
+          if (getData.paymentStatus === 'PAID') {
+            setPaymentStatus('PAID')
+            paidRef.current = true
+          }
+          return
+        }
+        // Se já está PAGO no banco
+        if (getData.paymentStatus === 'PAID') {
+          setPaymentStatus('PAID')
+          paidRef.current = true
+          setPix((prev) => ({ ...prev, loading: false }))
+          return
+        }
+      }
+
+      // 2. Não existe PIX → gerar via POST
       const res = await fetch('/api/payment/pix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
