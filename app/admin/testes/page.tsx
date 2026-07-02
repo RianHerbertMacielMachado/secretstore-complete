@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import {
   FlaskConical, QrCode, Mail, Link2, FolderOpen, UserCheck,
-  CheckCircle2, XCircle, Copy, Check, ChevronDown, ChevronUp,
-  Loader2, AlertTriangle,
+  CheckCircle2, XCircle, Copy, Check, Loader2, AlertTriangle,
+  CreditCard, Smartphone,
 } from 'lucide-react'
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -218,25 +218,29 @@ export default function TestesAdminPage() {
   const [modal, setModal] = useState<TestResult | null>(null)
 
   // Estados de loading
-  const [loadingPix, setLoadingPix] = useState(false)
-  const [loadingEmail, setLoadingEmail] = useState(false)
-  const [loadingLink, setLoadingLink] = useState(false)
+  const [loadingPix,    setLoadingPix]    = useState(false)
+  const [loadingEmail,  setLoadingEmail]  = useState(false)
+  const [loadingLink,   setLoadingLink]   = useState(false)
   const [loadingFolder, setLoadingFolder] = useState(false)
-  const [loadingGrant, setLoadingGrant] = useState(false)
+  const [loadingGrant,  setLoadingGrant]  = useState(false)
+  const [loadingPaypal, setLoadingPaypal] = useState(false)
+  const [loadingPicpay, setLoadingPicpay] = useState(false)
 
   // Resultados inline
-  const [resultPix, setResultPix] = useState<TestResult | null>(null)
-  const [resultEmail, setResultEmail] = useState<TestResult | null>(null)
-  const [resultLink, setResultLink] = useState<TestResult | null>(null)
+  const [resultPix,    setResultPix]    = useState<TestResult | null>(null)
+  const [resultEmail,  setResultEmail]  = useState<TestResult | null>(null)
+  const [resultLink,   setResultLink]   = useState<TestResult | null>(null)
   const [resultFolder, setResultFolder] = useState<TestResult | null>(null)
-  const [resultGrant, setResultGrant] = useState<TestResult | null>(null)
+  const [resultGrant,  setResultGrant]  = useState<TestResult | null>(null)
+  const [resultPaypal, setResultPaypal] = useState<TestResult | null>(null)
+  const [resultPicpay, setResultPicpay] = useState<TestResult | null>(null)
 
   // Campos de formulário
-  const [emailTo, setEmailTo] = useState('')
-  const [directLinkUrl, setDirectLinkUrl] = useState('')
-  const [sharedFolderUrl, setSharedFolderUrl] = useState('')
-  const [grantUrl, setGrantUrl] = useState('')
-  const [grantEmail, setGrantEmail] = useState('')
+  const [emailTo,        setEmailTo]        = useState('')
+  const [directLinkUrl,  setDirectLinkUrl]  = useState('')
+  const [sharedFolderUrl,setSharedFolderUrl]= useState('')
+  const [grantUrl,       setGrantUrl]       = useState('')
+  const [grantEmail,     setGrantEmail]     = useState('')
 
   // ── Runner genérico ────────────────────────────────────────────────────────
   async function runTest(
@@ -457,6 +461,52 @@ export default function TestesAdminPage() {
           Testar Concessão de Permissão
         </TestButton>
         <InlineResult result={resultGrant} />
+      </TestCard>
+
+      {/* ── 6. Teste de PayPal ───────────────────────────────────────────── */}
+      <TestCard
+        icon={CreditCard}
+        title="Teste de Pagamento PayPal"
+        description="Verifica se as credenciais do PayPal estão configuradas e válidas"
+        color="bg-blue-600/20"
+      >
+        <p className="text-white/50 text-sm mb-4">
+          Testa as variáveis{' '}
+          <code className="text-neon-pink bg-neon-pink/10 px-1 py-0.5 rounded text-xs">PAYPAL_CLIENT_ID</code> e{' '}
+          <code className="text-neon-pink bg-neon-pink/10 px-1 py-0.5 rounded text-xs">PAYPAL_CLIENT_SECRET</code>{' '}
+          obtendo um access token OAuth no ambiente configurado em{' '}
+          <code className="text-neon-pink bg-neon-pink/10 px-1 py-0.5 rounded text-xs">PAYPAL_MODE</code>{' '}
+          (sandbox ou live).
+        </p>
+        <TestButton
+          loading={loadingPaypal}
+          onClick={() => runTest({ action: 'test_paypal' }, setLoadingPaypal, setResultPaypal)}
+        >
+          Testar Credenciais PayPal
+        </TestButton>
+        <InlineResult result={resultPaypal} />
+      </TestCard>
+
+      {/* ── 7. Teste de PicPay ───────────────────────────────────────────── */}
+      <TestCard
+        icon={Smartphone}
+        title="Teste de Pagamento PicPay"
+        description="Verifica se o token do PicPay está configurado e consegue acessar a API"
+        color="bg-green-600/20"
+      >
+        <p className="text-white/50 text-sm mb-4">
+          Testa a variável{' '}
+          <code className="text-neon-pink bg-neon-pink/10 px-1 py-0.5 rounded text-xs">PICPAY_TOKEN</code>{' '}
+          (ou <code className="text-neon-pink bg-neon-pink/10 px-1 py-0.5 rounded text-xs">PICPAY_SELLER_TOKEN</code>)
+          fazendo uma requisição real à API do PicPay para validar o acesso.
+        </p>
+        <TestButton
+          loading={loadingPicpay}
+          onClick={() => runTest({ action: 'test_picpay' }, setLoadingPicpay, setResultPicpay)}
+        >
+          Testar Token PicPay
+        </TestButton>
+        <InlineResult result={resultPicpay} />
       </TestCard>
 
       {/* Modal flutuante de resultado */}

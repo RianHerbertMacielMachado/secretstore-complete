@@ -300,6 +300,152 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // ── 6. Teste de PayPal ───────────────────────────────────────────────────
+    if (action === 'test_paypal') {
+      const clientId     = process.env.PAYPAL_CLIENT_ID
+      const clientSecret = process.env.PAYPAL_CLIENT_SECRET
+      const mode         = process.env.PAYPAL_MODE === 'live' ? 'live' : 'sandbox'
+
+      if (!clientId || !clientSecret) {
+        return NextResponse.json({
+          success: false,
+          error: 'Credenciais do PayPal não configuradas.',
+          detail: JSON.stringify({
+            PAYPAL_CLIENT_ID:     clientId     ? 'configurado' : 'não configurado',
+            PAYPAL_CLIENT_SECRET: clientSecret ? 'configurado' : 'não configurado',
+            PAYPAL_MODE:          process.env.PAYPAL_MODE || 'não configurado (padrão: sandbox)',
+            PAYPAL_WEBHOOK_ID:    process.env.PAYPAL_WEBHOOK_ID || 'não configurado (opcional)',
+          }, null, 2),
+        })
+      }
+
+      const baseUrl = mode === 'live'
+        ? 'https://api.paypal.com'
+        : 'https://api.sandbox.paypal.com'
+
+      try {
+        // Obter access token — é a forma oficial de testar credenciais PayPal
+        const tokenRes = await fetch(`${baseUrl}/v1/oauth2/token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/x-www-form-urlencoded',
+            Authorization:   `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          },
+          body: 'grant_type=client_credentials',
+        })
+        const tokenData = await tokenRes.json()
+
+        if (!tokenRes.ok) {
+          let hint = ''
+          if (tokenRes.status === 401) hint = 'Client ID ou Client Secret incorretos. Verifique em developer.paypal.com → Apps & Credentials.'
+          else if (tokenRes.status === 400) hint = 'Requisição inválida. Confirme que PAYPAL_MODE corresponde ao tipo das credenciais (sandbox ou live).'
+
+          return NextResponse.json({
+            success: false,
+            error: `Falha na autenticação PayPal (${tokenRes.status}): ${tokenData.error_description || tokenData.error || 'erro desconhecido'}${hint ? ` — ${hint}` : ''}`,
+            detail: JSON.stringify({
+              status_http:  tokenRes.status,
+              paypal_error: tokenData.error,
+              descricao:    tokenData.error_description,
+              modo:         mode,
+              dica:         hint || null,
+            }, null, 2),
+          })
+        }
+
+        // Verificar escopo mínimo necessário
+        const scopes: string = tokenData.scope || ''
+        const hasPayments = scopes.includes('https://uri.paypal.com/services/payments')
+          || scopes.includes('openid')
+
+        return NextResponse.json({
+          success: true,
+          message: `Credenciais PayPal válidas! Autenticado no ambiente de ${mode === 'live' ? 'produção' : 'sandbox'}.`,
+          detail: JSON.stringify({
+            ambiente:      mode,
+            token_type:    tokenData.token_type,
+            expires_in:    `${tokenData.expires_in}s`,
+            client_id_prefix: clientId.slice(0, 10) + '...',
+            webhook_id:    process.env.PAYPAL_WEBHOOK_ID || 'não configurado (webhook não será verificado)',
+            scopes_preview: scopes.split(' ').slice(0, 4).join(' ') + '...',
+          }, null, 2),
+        })
+      } catch (err: any) {
+        return NextResponse.json({
+          success: false,
+          error: `Erro ao conectar com PayPal: ${err.message}`,
+          detail: JSON.stringify({ erro: err.message, modo: mode, baseUrl }, null, 2),
+        })
+      }
+    }
+
+    // ── 7. Teste de PicPay ───────────────────────────────────────────────────
+    if (action === 'test_picpay') {
+      const picpayToken   = process.env.PICPAY_TOKEN
+      const picpaySeller  = process.env.PICPAY_SELLER_TOKEN
+      const webhookSecret = process.env.PICPAY_WEBHOOK_SECRET
+
+      if (!picpayToken && !picpaySeller) {
+        return NextResponse.json({
+          success: false,
+          error: 'Credenciais do PicPay não configuradas.',
+          detail: JSON.stringify({
+            PICPAY_TOKEN:          picpayToken   ? 'configurado' : 'não configurado',
+            PICPAY_SELLER_TOKEN:   picpaySeller  ? 'configurado' : 'não configurado',
+            PICPAY_WEBHOOK_SECRET: webhookSecret ? 'configurado' : 'não configurado (opcional)',
+            instrucoes: 'Acesse https://lojista.picpay.com → Configurações → Tokens para obter suas credenciais.',
+          }, null, 2),
+        })
+      }
+
+      const token = picpayToken || picpaySeller!
+
+      try {
+        // PicPay API: verificar token tentando listar pagamentos (endpoint público da API)
+        const ppRes = await fetch('https://appws.picpay.com/ecommerce/public/payments?offset=0&limit=1', {
+          headers: {
+            'x-picpay-token': token,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        // 200 ou 404 = token válido (404 = sem pagamentos, mas auth OK)
+        // 401/403 = token inválido
+        if (ppRes.status === 401 || ppRes.status === 403) {
+          const ppData = await ppRes.json().catch(() => ({}))
+          return NextResponse.json({
+            success: false,
+            error: `Token PicPay inválido ou sem permissão (HTTP ${ppRes.status}). Verifique o valor de PICPAY_TOKEN em lojista.picpay.com.`,
+            detail: JSON.stringify({
+              status_http: ppRes.status,
+              resposta:    ppData,
+              token_prefix: token.slice(0, 10) + '...',
+            }, null, 2),
+          })
+        }
+
+        const ppData = await ppRes.json().catch(() => ({}))
+
+        return NextResponse.json({
+          success: true,
+          message: `Token PicPay válido! Conexão com a API estabelecida com sucesso.`,
+          detail: JSON.stringify({
+            status_http:     ppRes.status,
+            token_prefix:    token.slice(0, 10) + '...',
+            variavel_usada:  picpayToken ? 'PICPAY_TOKEN' : 'PICPAY_SELLER_TOKEN',
+            webhook_secret:  webhookSecret ? 'configurado' : 'não configurado (webhook não verificará assinatura)',
+            payments_sample: ppData?.data?.length ?? ppData?.total ?? 'n/a',
+          }, null, 2),
+        })
+      } catch (err: any) {
+        return NextResponse.json({
+          success: false,
+          error: `Erro ao conectar com PicPay: ${err.message}`,
+          detail: JSON.stringify({ erro: err.message }, null, 2),
+        })
+      }
+    }
+
     return NextResponse.json({ error: `Ação "${action}" não reconhecida` }, { status: 400 })
   } catch (error: any) {
     console.error('[ADMIN TEST]', error)
