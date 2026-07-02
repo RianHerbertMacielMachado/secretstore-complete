@@ -8,6 +8,9 @@ import { prisma } from '@/lib/prisma'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
+  // trustHost permite que NextAuth funcione em qualquer domínio/proxy
+  // sem depender do NEXTAUTH_URL estar correto no servidor
+  ...({ trustHost: true } as any),
   session: {
     strategy: 'jwt',
   },

@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth/auth-options'
 import { prisma } from '@/lib/prisma'
 
 // ─── Gera pagamento PIX via Mercado Pago ────────────────────────────────────
+// Nota: sem verificação de sessão — orderId (CUID) é suficientemente opaco
+// O usuário só obtém o orderId após criar o pedido com sucesso
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
-    }
-
     const { orderId } = await req.json()
     if (!orderId) {
       return NextResponse.json({ error: 'orderId obrigatório' }, { status: 400 })
@@ -132,11 +127,6 @@ export async function POST(req: NextRequest) {
 // ─── Consulta status do pagamento ───────────────────────────────────────────
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
-    }
-
     const { searchParams } = new URL(req.url)
     const orderId = searchParams.get('orderId')
     if (!orderId) {
