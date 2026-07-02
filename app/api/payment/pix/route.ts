@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// ─── Detecta se o token é de teste ou produção ──────────────────────────────
+function isSandboxToken(token: string): boolean {
+  return token.startsWith('TEST-')
+}
+
+// ─── URL da API MP (mesma para teste e produção) ─────────────────────────────
+const MP_API = 'https://api.mercadopago.com'
+
 // ─── Gera pagamento PIX via Mercado Pago ────────────────────────────────────
-// Nota: sem verificação de sessão — orderId (CUID) é suficientemente opaco
-// O usuário só obtém o orderId após criar o pedido com sucesso
 export async function POST(req: NextRequest) {
   try {
     const { orderId } = await req.json()
@@ -25,53 +31,71 @@ export async function POST(req: NextRequest) {
     if (order.pixCopiaECola && order.pixExpiresAt && order.pixExpiresAt > new Date()) {
       return NextResponse.json({
         pixQrCodeBase64: order.pixQrCodeBase64,
-        pixCopiaECola: order.pixCopiaECola,
-        pixExpiresAt: order.pixExpiresAt,
-        paymentId: order.paymentId,
-        paymentStatus: order.paymentStatus,
+        pixCopiaECola:   order.pixCopiaECola,
+        pixExpiresAt:    order.pixExpiresAt,
+        paymentId:       order.paymentId,
+        paymentStatus:   order.paymentStatus,
         cached: true,
       })
     }
 
-    const accessToken = process.env.MP_ACCESS_TOKEN
+    // Escolhe token: preferência para MP_ACCESS_TOKEN, fallback para MP_TEST_TOKEN
+    const accessToken =
+      process.env.MP_ACCESS_TOKEN ||
+      process.env.MP_TEST_TOKEN ||
+      null
+
     if (!accessToken) {
       return NextResponse.json(
-        { error: 'Mercado Pago não configurado. Adicione MP_ACCESS_TOKEN nas variáveis de ambiente.' },
+        {
+          error: 'MP_NAO_CONFIGURADO',
+          message: 'Mercado Pago não configurado. Configure MP_ACCESS_TOKEN (produção) ou MP_TEST_TOKEN (testes) nas variáveis de ambiente.',
+        },
         { status: 503 }
       )
     }
 
+    const isSandbox = isSandboxToken(accessToken)
+
     // Montar payload para MP Pix
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000) // 30 minutos
-    const expiresAtISO = expiresAt.toISOString().replace('Z', '-03:00') // horário BRT
+    const expiresAt    = new Date(Date.now() + 30 * 60 * 1000) // 30 minutos
+    const expiresAtISO = expiresAt.toISOString().replace('Z', '-03:00')
 
     const description =
       order.items.length === 1
         ? order.items[0].product.name
         : `${order.items.length} produtos`
 
-    const payload = {
+    // Em sandbox, o email do pagador DEVE ser de teste (@testuser.com)
+    const payerEmail = isSandbox
+      ? 'test_user_buyer@testuser.com'
+      : (order.customerEmail || 'comprador@email.com')
+
+    const payload: Record<string, any> = {
       transaction_amount: Number(order.totalAmount.toFixed(2)),
-      description: description.slice(0, 120),
-      payment_method_id: 'pix',
+      description:        description.slice(0, 120),
+      payment_method_id:  'pix',
       payer: {
-        email: order.customerEmail || 'comprador@email.com',
+        email:      payerEmail,
         first_name: (order.customerName || 'Cliente').split(' ')[0],
-        last_name: (order.customerName || 'Cliente').split(' ').slice(1).join(' ') || 'Comprador',
+        last_name:  (order.customerName || 'Cliente').split(' ').slice(1).join(' ') || 'Comprador',
       },
       date_of_expiration: expiresAtISO,
-      // Notificação de webhook quando o PIX for pago
-      notification_url: process.env.MP_WEBHOOK_URL || undefined,
-      external_reference: orderId, // vincula o paymentId ao pedido
+      external_reference: orderId,
+    }
+
+    // Webhook apenas em produção (sandbox não consegue chamar URLs públicas locais)
+    if (!isSandbox && process.env.MP_WEBHOOK_URL) {
+      payload.notification_url = process.env.MP_WEBHOOK_URL
     }
 
     // Chamar API do Mercado Pago
-    const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
+    const mpRes = await fetch(`${MP_API}/v1/payments`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-        'X-Idempotency-Key': orderId, // evita duplicação se chamado 2x
+        'Content-Type':    'application/json',
+        Authorization:     `Bearer ${accessToken}`,
+        'X-Idempotency-Key': orderId,
       },
       body: JSON.stringify(payload),
     })
@@ -79,23 +103,44 @@ export async function POST(req: NextRequest) {
     const mpData = await mpRes.json()
 
     if (!mpRes.ok) {
-      console.error('[PIX] Erro MP:', mpData)
-      const errMsg =
-        mpData?.message ||
-        mpData?.cause?.[0]?.description ||
-        'Erro ao gerar PIX no Mercado Pago'
-      return NextResponse.json({ error: errMsg }, { status: mpRes.status })
+      console.error('[PIX] Erro MP:', JSON.stringify(mpData, null, 2))
+
+      // Mensagens de erro amigáveis por código
+      const causeCode    = mpData?.cause?.[0]?.code
+      const causeDesc    = mpData?.cause?.[0]?.description || ''
+      const mpStatusCode = mpData?.status || mpRes.status
+
+      let friendlyError = mpData?.message || 'Erro ao gerar PIX no Mercado Pago'
+
+      if (causeCode === 7 || causeDesc.includes('live credentials')) {
+        friendlyError =
+          'Credenciais de produção não autorizadas. Sua conta Mercado Pago precisa estar verificada e aprovada para usar o Access Token de produção. Use o token de TESTE (TEST-...) enquanto a conta não for aprovada.'
+      } else if (mpStatusCode === 400 && causeDesc.includes('email')) {
+        friendlyError =
+          'Email do pagador inválido para o ambiente de testes. Use um email @testuser.com.'
+      } else if (mpStatusCode === 403) {
+        friendlyError =
+          'Acesso negado pelo Mercado Pago. Verifique se o token está correto e se a conta tem permissão para PIX.'
+      }
+
+      return NextResponse.json(
+        { error: friendlyError, mp_code: causeCode, isSandbox },
+        { status: 400 }
+      )
     }
 
     // Extrair dados do PIX
     const qrCodeBase64 = mpData.point_of_interaction?.transaction_data?.qr_code_base64 || null
-    const copiaECola = mpData.point_of_interaction?.transaction_data?.qr_code || null
-    const paymentId = mpData.id?.toString() || null
+    const copiaECola   = mpData.point_of_interaction?.transaction_data?.qr_code || null
+    const paymentId    = mpData.id?.toString() || null
 
     if (!copiaECola) {
-      console.error('[PIX] MP não retornou qr_code:', mpData)
+      console.error('[PIX] MP não retornou qr_code:', JSON.stringify(mpData, null, 2))
       return NextResponse.json(
-        { error: 'Mercado Pago não retornou o código PIX. Verifique se a conta MP está habilitada para PIX.' },
+        {
+          error: 'Mercado Pago não retornou o código PIX. Verifique se a conta MP está habilitada para receber via PIX.',
+          mp_status: mpData.status,
+        },
         { status: 502 }
       )
     }
@@ -106,17 +151,18 @@ export async function POST(req: NextRequest) {
       data: {
         paymentId,
         pixQrCodeBase64: qrCodeBase64,
-        pixCopiaECola: copiaECola,
-        pixExpiresAt: expiresAt,
+        pixCopiaECola:   copiaECola,
+        pixExpiresAt:    expiresAt,
       },
     })
 
     return NextResponse.json({
       pixQrCodeBase64: qrCodeBase64,
-      pixCopiaECola: copiaECola,
-      pixExpiresAt: expiresAt,
+      pixCopiaECola:   copiaECola,
+      pixExpiresAt:    expiresAt,
       paymentId,
-      paymentStatus: order.paymentStatus,
+      paymentStatus:   order.paymentStatus,
+      isSandbox,
     })
   } catch (error: any) {
     console.error('[PIX POST]', error)
@@ -136,11 +182,11 @@ export async function GET(req: NextRequest) {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       select: {
-        paymentStatus: true,
-        paymentId: true,
-        pixCopiaECola: true,
-        pixQrCodeBase64: true,
-        pixExpiresAt: true,
+        paymentStatus:      true,
+        paymentId:          true,
+        pixCopiaECola:      true,
+        pixQrCodeBase64:    true,
+        pixExpiresAt:       true,
         paymentConfirmedAt: true,
       },
     })
@@ -149,21 +195,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Pedido não encontrado' }, { status: 404 })
     }
 
-    // Se já está pago no banco, retorna direto sem consultar MP
+    // Já pago no banco → retorna direto
     if (order.paymentStatus === 'PAID') {
       return NextResponse.json({ paymentStatus: 'PAID', paymentConfirmedAt: order.paymentConfirmedAt })
     }
 
-    // Consultar status atual no MP (para casos onde o webhook falhou)
-    if (order.paymentId && process.env.MP_ACCESS_TOKEN) {
+    // Consultar status atual no MP (fallback caso webhook tenha falhado)
+    const accessToken = process.env.MP_ACCESS_TOKEN || process.env.MP_TEST_TOKEN
+    if (order.paymentId && accessToken) {
       try {
-        const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${order.paymentId}`, {
-          headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+        const mpRes = await fetch(`${MP_API}/v1/payments/${order.paymentId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
         })
         if (mpRes.ok) {
           const mpData = await mpRes.json()
           if (mpData.status === 'approved') {
-            // Confirmar no banco (webhook deve ter falhado)
             await prisma.order.update({
               where: { id: orderId },
               data: { paymentStatus: 'PAID', paymentConfirmedAt: new Date() },
@@ -179,7 +225,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       paymentStatus: order.paymentStatus,
-      pixExpiresAt: order.pixExpiresAt,
+      pixExpiresAt:  order.pixExpiresAt,
     })
   } catch (error: any) {
     console.error('[PIX GET]', error)

@@ -186,26 +186,54 @@ function PixPaymentBlock({ orderId }: { orderId: string }) {
 
   // ── Erro ──
   if (pix.error) {
+    const isLiveCredError =
+      pix.error.includes('live credentials') ||
+      pix.error.includes('produção não autorizadas') ||
+      pix.error.includes('Unauthorized')
+    const isNotConfigured =
+      pix.error.includes('MP_NAO_CONFIGURADO') ||
+      pix.error.includes('não configurado') ||
+      pix.error.includes('MP_ACCESS_TOKEN')
+
     return (
       <div className="text-center py-8">
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-5 mb-4">
           <AlertCircle size={28} className="text-red-400 mx-auto mb-2" />
           <p className="text-red-300 text-sm font-medium mb-1">Erro ao gerar PIX</p>
-          <p className="text-white/50 text-xs">{pix.error}</p>
+          <p className="text-white/50 text-xs leading-relaxed">{pix.error}</p>
         </div>
 
-        {/* Instruções manuais quando MP não está configurado */}
-        {pix.error.includes('MP_ACCESS_TOKEN') || pix.error.includes('não configurado') ? (
+        {/* Token de produção ainda não aprovado pelo MP */}
+        {isLiveCredError && (
+          <div className="bg-yellow-500/5 border border-yellow-500/30 rounded-xl p-4 mb-4 text-left">
+            <p className="text-yellow-300 font-semibold text-sm mb-2">⚠️ Conta MP não aprovada para produção</p>
+            <p className="text-white/60 text-xs mb-3">
+              Você está usando um token de produção (<code className="text-neon-pink">APP_USR-...</code>), mas a conta ainda precisa ser verificada pelo Mercado Pago.
+            </p>
+            <p className="text-yellow-400 font-semibold text-xs mb-2">✅ Solução: use o token de TESTE agora</p>
+            <ol className="text-white/60 text-xs space-y-1.5 list-decimal list-inside">
+              <li>Acesse <a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" rel="noopener" className="text-neon-pink underline">MP Developers → Suas Aplicações</a></li>
+              <li>Selecione sua app → aba <strong className="text-white/80">Credenciais de teste</strong></li>
+              <li>Copie o token que começa com <code className="text-green-400">TEST-</code></li>
+              <li>No Railway: substitua o valor de <code className="text-neon-pink">MP_ACCESS_TOKEN</code> pelo token <code className="text-green-400">TEST-...</code></li>
+              <li>Redeploy automático após salvar</li>
+            </ol>
+            <p className="text-white/30 text-xs mt-3">Para produção real: complete a verificação da conta MP e volte a usar o token <code>APP_USR-...</code></p>
+          </div>
+        )}
+
+        {/* MP não configurado */}
+        {isNotConfigured && !isLiveCredError && (
           <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 mb-4 text-left">
-            <p className="text-yellow-400 font-semibold text-sm mb-2">⚙️ Como ativar o PIX:</p>
+            <p className="text-yellow-400 font-semibold text-sm mb-2">⚙️ Como configurar o PIX:</p>
             <ol className="text-white/60 text-xs space-y-1 list-decimal list-inside">
-              <li>Crie uma conta no <a href="https://www.mercadopago.com.br" target="_blank" className="text-neon-pink underline">Mercado Pago</a></li>
-              <li>Vá em <strong className="text-white/80">Credenciais</strong> e copie o <strong className="text-white/80">Access Token</strong> de produção</li>
-              <li>Configure <code className="text-neon-pink bg-black/40 px-1 rounded">MP_ACCESS_TOKEN</code> nas variáveis de ambiente</li>
-              <li>Reinicie a aplicação</li>
+              <li>Acesse <a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" rel="noopener" className="text-neon-pink underline">MP Developers</a> e crie uma aplicação</li>
+              <li>Em <strong className="text-white/80">Credenciais de teste</strong>, copie o token <code className="text-green-400">TEST-...</code></li>
+              <li>No Railway: adicione <code className="text-neon-pink">MP_ACCESS_TOKEN</code> com esse valor</li>
+              <li>Redeploy automático após salvar</li>
             </ol>
           </div>
-        ) : null}
+        )}
 
         <button
           onClick={generatePix}
