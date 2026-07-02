@@ -139,6 +139,9 @@ model Order {
   deliveryEmailSentAt DateTime?
   customerEmail       String      @default("")
   customerName        String      @default("")
+  pixQrCodeBase64     String?     // QR Code em base64 para exibição
+  pixCopiaECola       String?     // Código copia-e-cola PIX
+  pixExpiresAt        DateTime?   // Expiração do PIX (30 min)
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 }
