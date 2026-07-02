@@ -237,26 +237,30 @@ const SECTIONS: GuiaSection[] = [
     title: '7. Configuração de Email',
     icon: '📧',
     checkKey: 'email',
-    description: 'Envio de emails de confirmação e entrega de produtos',
+    description: 'Envio automático de e-mails de entrega após pagamento confirmado',
     steps: [
       {
-        title: 'Opção A: Gmail com Senha de App',
-        content: 'Na conta Google:\n1. Ative a Verificação em 2 etapas\n2. Acesse Conta Google → Segurança → "Senhas de app"\n3. Selecione "Email" e "Computador Windows"\n4. Copie a senha gerada de 16 caracteres',
-        code: 'EMAIL_HOST=smtp.gmail.com\nEMAIL_PORT=587\nEMAIL_USER=seu@gmail.com\nEMAIL_PASS=xxxx xxxx xxxx xxxx\nEMAIL_FROM="DarkShop <noreply@darkshop.com>"',
+        title: '⚠️ Importante: SMTP está bloqueado no Railway',
+        content: 'O Railway (e a maioria dos hosts de aplicação) bloqueia as portas SMTP 587 e 465 para prevenir spam. Tentar usar Gmail ou qualquer SMTP resulta em "Connection timeout".\n\nA solução é usar a API HTTP do Resend (porta 443 — nunca bloqueada). Esta é a configuração padrão da loja.',
       },
       {
-        title: 'Opção B: Resend (Recomendado)',
-        content: 'Acesse resend.com → crie conta → "API Keys" → "Create API Key".\nVerifique seu domínio em "Domains" para melhor deliverabilidade.',
+        title: 'Opção A: Resend via API HTTP (Recomendado ✅)',
+        content: '1. Acesse resend.com e crie uma conta gratuita (3.000 e-mails/mês grátis)\n2. Em "Domains" → "Add Domain" → adicione e verifique seu domínio (adiciona registros DNS)\n3. Em "API Keys" → "Create API Key" → copie a chave gerada\n4. Configure apenas 2 variáveis de ambiente:\n\n• RESEND_API_KEY = sua API Key (re_...)\n• EMAIL_FROM = remetente com domínio verificado\n\n✅ Não precisa de EMAIL_HOST, EMAIL_PORT, EMAIL_USER ou EMAIL_PASS.',
         link: { label: 'Acessar Resend', url: 'https://resend.com' },
-        code: 'EMAIL_HOST=smtp.resend.com\nEMAIL_PORT=587\nEMAIL_USER=resend\nEMAIL_PASS=re_xxxxxxxxx\nEMAIL_FROM="DarkShop <noreply@seudominio.com>"',
+        code: 'RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxx\nEMAIL_FROM=Secret Store <suporte@seudominio.com>',
       },
       {
-        title: 'Opção C: Mailgun',
-        content: 'Acesse mailgun.com → crie conta → adicione domínio → obtenha credenciais SMTP.',
-        link: { label: 'Acessar Mailgun', url: 'https://mailgun.com' },
+        title: 'Opção B: Gmail com Senha de App (apenas fora do Railway)',
+        content: 'Use apenas se o seu host permite conexões SMTP (ex: VPS próprio, Render.com).\n\nNa conta Google:\n1. Ative a Verificação em 2 etapas\n2. Acesse Conta Google → Segurança → "Senhas de app"\n3. Gere uma senha de 16 caracteres para "Email"\n\n⚠️ Não funciona no Railway — use a Opção A.',
+        code: 'EMAIL_HOST=smtp.gmail.com\nEMAIL_PORT=587\nEMAIL_USER=seu@gmail.com\nEMAIL_PASS=xxxx xxxx xxxx xxxx\nEMAIL_FROM=Secret Store <seu@gmail.com>',
+      },
+      {
+        title: 'Verificar se está funcionando',
+        content: 'Após configurar as variáveis e fazer o deploy, use o Painel de Testes:\n\n1. Acesse Admin → Testes → seção "Teste de Envio de E-mail"\n2. Digite seu e-mail no campo de destino\n3. Clique em "Enviar E-mail de Teste"\n4. Se receber o e-mail → integração OK ✅\n5. Se aparecer erro → o modal mostrará o erro exato com dica de solução',
+        link: { label: 'Ir para Painel de Testes', url: '/admin/testes' },
       },
     ],
-    envVars: ['EMAIL_HOST', 'EMAIL_PORT', 'EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'],
+    envVars: ['RESEND_API_KEY', 'EMAIL_FROM'],
   },
   {
     id: 'cloudinary',
@@ -360,16 +364,14 @@ PICPAY_SELLER_TOKEN=
 
 # ===== GOOGLE DRIVE (método "Conceder Permissão") =====
 # client_email do arquivo JSON da service account
-GOOGLE_SERVICE_ACCOUNT_EMAIL=darkshop-drive@seu-projeto.iam.gserviceaccount.com
+GOOGLE_SERVICE_ACCOUNT_EMAIL=secretstore-drive@seu-projeto.iam.gserviceaccount.com
 # private_key do JSON — substitua quebras de linha por \n e envolva em aspas
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nSUA_CHAVE_AQUI\n-----END PRIVATE KEY-----\n"
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\nSUA_CHAVE_AQUI\\n-----END PRIVATE KEY-----\\n"
 
-# ===== EMAIL =====
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=
-EMAIL_PASS=
-EMAIL_FROM=noreply@seudominio.com
+# ===== EMAIL (via Resend API — recomendado para Railway) =====
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxx
+EMAIL_FROM=Secret Store <suporte@seudominio.com>
+# OBS: EMAIL_HOST/PORT/USER/PASS não são necessários com RESEND_API_KEY
 
 # ===== CLOUDINARY =====
 CLOUDINARY_CLOUD_NAME=
@@ -378,7 +380,7 @@ CLOUDINARY_API_SECRET=
 
 # ===== SITE =====
 NEXT_PUBLIC_SITE_URL=https://seudominio.com
-NEXT_PUBLIC_SITE_NAME=DarkShop`,
+NEXT_PUBLIC_SITE_NAME=Secret Store`,
       },
     ],
     envVars: ['NEXTAUTH_SECRET', 'NEXTAUTH_URL'],
@@ -455,16 +457,56 @@ NEXT_PUBLIC_SITE_NAME=DarkShop`,
 🔴 Login Google não funciona → Verifique URLs de callback no console
 🔴 Webhook não chega → Use ngrok para testar localmente
 🔴 Banco não conecta → Verifique DATABASE_URL e execute db:push
-🔴 Email não envia → Verifique SMTP e senha de app do Gmail
+🔴 Email não envia (Connection timeout) → Railway bloqueia SMTP. Use RESEND_API_KEY em vez de EMAIL_HOST/USER/PASS
+🔴 Email não envia (401 Unauthorized) → RESEND_API_KEY inválida. Verifique em resend.com/api-keys
+🔴 Email não envia (422) → Domínio do EMAIL_FROM não verificado no Resend. Vá em resend.com/domains
 🔴 Drive não entrega → Verifique se GOOGLE_SERVICE_ACCOUNT_EMAIL e GOOGLE_PRIVATE_KEY estão configurados
-🔴 "[DRIVE] Falha ao conceder permissão" → Service account não é Editor do arquivo/pasta. Abra o Drive, compartilhe o arquivo com o e-mail do service account como "Editor"
+🔴 "[DRIVE] Falha ao conceder permissão" → Service account não é Editor do arquivo/pasta. Compartilhe o arquivo com o e-mail do service account como "Editor"
 🔴 GOOGLE_PRIVATE_KEY inválida → Certifique-se de que quebras de linha estão como \\n (dois caracteres) e mantenha as linhas BEGIN/END PRIVATE KEY
-🔴 Drive API não autorizada → Ative a "Google Drive API" no Google Cloud Console → APIs e Serviços → Biblioteca`,
+🔴 Drive API não autorizada → Ative a "Google Drive API" no Google Cloud Console → APIs e Serviços → Biblioteca
+🔴 PIX não gera QR Code → Verifique MP_ACCESS_TOKEN. Token TEST- = sandbox, APP_USR- = produção (precisa conta verificada)
+🔴 PayPal falha autenticação → PAYPAL_CLIENT_ID/SECRET incorretos ou PAYPAL_MODE errado (sandbox vs live)
+🔴 PicPay token inválido → Obtenha novo token em lojista.picpay.com → Configurações → Tokens`,
       },
       {
-        title: 'Suporte e Recursos',
-        content: 'Documentações oficiais para referência:',
-        link: { label: 'NextAuth.js Docs', url: 'https://next-auth.js.org' },
+        title: 'Painel de Testes Integrado',
+        content: 'Use o Painel de Testes para diagnosticar integrações em tempo real, sem precisar criar pedidos reais:\n\n✅ Teste de PIX — valida token do Mercado Pago\n✅ Teste de E-mail — envia e-mail real de teste\n✅ Teste de Link Direto — valida URL do Google Drive\n✅ Teste de Pasta Compartilhada — valida URL de pasta\n✅ Teste de Conceder Permissão — testa service account Google\n✅ Teste de PayPal — valida credenciais OAuth\n✅ Teste de PicPay — valida token da API\n\nQualquer erro é exibido em modal com detalhes técnicos e botão de copiar.',
+        link: { label: 'Abrir Painel de Testes', url: '/admin/testes' },
+      },
+    ],
+    envVars: [],
+  },
+  {
+    id: 'testes',
+    title: '13. Painel de Testes',
+    icon: '🧪',
+    checkKey: 'database',
+    description: 'Valide todas as integrações em tempo real antes de ir para produção',
+    steps: [
+      {
+        title: 'O que é o Painel de Testes',
+        content: 'O Painel de Testes (/admin/testes) permite validar cada integração individualmente, sem precisar criar pedidos reais ou esperar por webhooks.\n\nQualquer erro é exibido em um modal flutuante com:\n• Mensagem de erro completa do serviço\n• Detalhes técnicos (código HTTP, resposta do servidor)\n• Dica específica de como resolver\n• Botão de copiar para facilitar o suporte',
+        link: { label: 'Abrir Painel de Testes', url: '/admin/testes' },
+      },
+      {
+        title: 'Teste de PIX (Mercado Pago)',
+        content: 'Verifica o token MP_ACCESS_TOKEN ou MP_TEST_TOKEN consultando a API do Mercado Pago.\n\n✅ Sucesso: mostra ambiente (sandbox/produção) e prefixo do token\n❌ Erro 401: token inválido ou expirado\n❌ Erro code 7: token de produção com conta não verificada → use token TEST-',
+      },
+      {
+        title: 'Teste de E-mail',
+        content: 'Envia um e-mail de teste real para o endereço informado usando a integração configurada.\n\n✅ Sucesso: e-mail chega na caixa de entrada\n❌ Connection timeout: SMTP bloqueado pelo Railway → configure RESEND_API_KEY\n❌ 401 Resend: API Key inválida\n❌ 422 Resend: domínio do EMAIL_FROM não verificado no resend.com/domains',
+      },
+      {
+        title: 'Testes de Entrega (Google Drive)',
+        content: 'Três testes independentes para os métodos de entrega:\n\n📎 Link Direto — extrai e valida o ID da URL do Drive\n📁 Pasta Compartilhada — valida URL de pasta e retorna link de entrega\n🔐 Conceder Permissão — testa o service account concedendo acesso real a um e-mail\n\nPara "Conceder Permissão" funcionar, o service account precisa ser "Editor" do arquivo/pasta no Drive.',
+      },
+      {
+        title: 'Teste de PayPal',
+        content: 'Obtém um access token OAuth na API do PayPal usando PAYPAL_CLIENT_ID e PAYPAL_CLIENT_SECRET.\n\n✅ Sucesso: mostra ambiente (sandbox/live) e escopos disponíveis\n❌ 401: Client ID ou Secret incorretos\n❌ 400: PAYPAL_MODE não corresponde ao tipo das credenciais',
+      },
+      {
+        title: 'Teste de PicPay',
+        content: 'Consulta o endpoint real da API do PicPay usando PICPAY_TOKEN (ou PICPAY_SELLER_TOKEN).\n\n✅ Sucesso: token válido, conexão estabelecida\n❌ 401/403: token inválido → obtenha novo em lojista.picpay.com → Configurações → Tokens',
       },
     ],
     envVars: [],

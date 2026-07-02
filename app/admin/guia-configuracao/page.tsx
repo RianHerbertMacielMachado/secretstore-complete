@@ -15,7 +15,7 @@ async function getConfigStatus() {
     paypal: !!(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),
     picpay: !!(process.env.PICPAY_TOKEN),
     google_drive: !!(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY),
-    email: !!(process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS),
+    email: !!(process.env.RESEND_API_KEY || (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS)),
     cloudinary: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY),
     database: !!(process.env.DATABASE_URL),
     nextauth: !!(process.env.NEXTAUTH_SECRET),
