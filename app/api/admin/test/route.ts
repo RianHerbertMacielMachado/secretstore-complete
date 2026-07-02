@@ -89,15 +89,19 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      if (!process.env.EMAIL_USER) {
+      // Verificar se algum método está configurado
+      const hasResend = !!process.env.RESEND_API_KEY
+      const hasSmtp   = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS)
+
+      if (!hasResend && !hasSmtp) {
         return NextResponse.json({
           success: false,
-          error: 'EMAIL_USER não configurado. Configure EMAIL_USER e EMAIL_PASS nas variáveis de ambiente.',
+          error: 'Nenhum método de envio de e-mail configurado.',
           detail: JSON.stringify({
-            EMAIL_USER: process.env.EMAIL_USER ? 'configurado' : 'não configurado',
-            EMAIL_PASS: process.env.EMAIL_PASS ? 'configurado' : 'não configurado',
-            EMAIL_HOST: process.env.EMAIL_HOST || 'smtp.gmail.com (padrão)',
-            EMAIL_PORT: process.env.EMAIL_PORT || '587 (padrão)',
+            metodo_recomendado: 'Resend API (porta 443 — não é bloqueada pelo Railway)',
+            RESEND_API_KEY: 'não configurado → adicione sua API Key do resend.com (re_...)',
+            EMAIL_FROM: process.env.EMAIL_FROM || 'não configurado → ex: Secret Store <suporte@secretstore.online>',
+            alternativa_smtp: 'Configure EMAIL_USER + EMAIL_PASS (pode falhar no Railway por bloqueio de porta 587)',
           }, null, 2),
         })
       }
@@ -107,54 +111,54 @@ export async function POST(req: NextRequest) {
           to,
           customerName: 'Teste Admin',
           orderId: 'TEST-' + Date.now(),
-          items: [
-            {
-              name: 'Produto de Teste',
-              link: 'https://drive.google.com/file/d/exemplo/view',
-              method: 'LINK',
-            },
-          ],
+          items: [{ name: 'Produto de Teste', link: 'https://drive.google.com/file/d/exemplo/view', method: 'LINK' }],
         })
 
         return NextResponse.json({
           success: true,
-          message: `E-mail de teste enviado com sucesso para ${to}.`,
+          message: `E-mail de teste enviado com sucesso para ${to} via ${hasResend ? 'Resend API' : 'SMTP'}.`,
           detail: JSON.stringify({
+            metodo: hasResend ? 'Resend API (HTTP)' : 'SMTP (Nodemailer)',
             from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
             to,
-            host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-            port: process.env.EMAIL_PORT || '587',
+            ...(hasResend
+              ? { resend_key_prefix: process.env.RESEND_API_KEY!.slice(0, 8) + '...' }
+              : { smtp_host: process.env.EMAIL_HOST || 'smtp.gmail.com', smtp_port: process.env.EMAIL_PORT || '587' }),
           }, null, 2),
         })
-      } catch (smtpError: any) {
-        // Extrai a mensagem real do erro SMTP (ex: "Invalid login", "535 Authentication failed", etc.)
-        const smtpMsg = smtpError?.message || String(smtpError)
-        const smtpCode = smtpError?.responseCode || smtpError?.code || null
-        const smtpResponse = smtpError?.response || null
+      } catch (emailError: any) {
+        const msg = emailError?.message || String(emailError)
 
+        // Dicas específicas por tipo de erro
         let hint = ''
-        if (smtpMsg.includes('Invalid login') || smtpMsg.includes('535') || smtpMsg.includes('Authentication')) {
-          hint = 'Credenciais incorretas. Para o Resend, EMAIL_USER deve ser "resend" e EMAIL_PASS deve ser sua API Key (re_...). Para Gmail, use uma Senha de App (não a senha normal).'
-        } else if (smtpMsg.includes('ECONNREFUSED') || smtpMsg.includes('connect')) {
-          hint = 'Não foi possível conectar ao servidor SMTP. Verifique EMAIL_HOST e EMAIL_PORT.'
-        } else if (smtpMsg.includes('ETIMEDOUT') || smtpMsg.includes('timeout')) {
-          hint = 'Timeout ao conectar ao SMTP. Verifique se a porta não está bloqueada.'
-        } else if (smtpMsg.includes('self signed') || smtpMsg.includes('certificate')) {
-          hint = 'Erro de certificado SSL. Tente EMAIL_PORT=465 com secure=true, ou EMAIL_PORT=587.'
+        if (msg.includes('RESEND_API_KEY')) {
+          hint = 'Adicione RESEND_API_KEY nas variáveis de ambiente do Railway com sua API Key do resend.com.'
+        } else if (msg.includes('EMAIL_FROM')) {
+          hint = 'Adicione EMAIL_FROM com um domínio verificado no Resend, ex: Secret Store <suporte@secretstore.online>.'
+        } else if (msg.includes('Resend API 401') || msg.includes('Unauthorized')) {
+          hint = 'API Key do Resend inválida ou expirada. Verifique o valor de RESEND_API_KEY em resend.com/api-keys.'
+        } else if (msg.includes('Resend API 422') || msg.includes('domain') || msg.includes('from address')) {
+          hint = 'Domínio do remetente não verificado no Resend. Acesse resend.com/domains e verifique o domínio do EMAIL_FROM.'
+        } else if (msg.includes('Resend API 429')) {
+          hint = 'Limite de envios do Resend atingido. Aguarde um momento e tente novamente.'
+        } else if (msg.includes('ETIMEDOUT') || msg.includes('timeout')) {
+          hint = 'Timeout de conexão — a porta SMTP está bloqueada no Railway. Migre para Resend API: adicione RESEND_API_KEY nas variáveis de ambiente.'
+        } else if (msg.includes('Invalid login') || msg.includes('535') || msg.includes('Authentication')) {
+          hint = 'Credenciais SMTP incorretas. Para o Gmail, use uma Senha de App (não a senha normal da conta).'
         }
 
         return NextResponse.json({
           success: false,
-          error: `Falha SMTP: ${smtpMsg}${hint ? ` — ${hint}` : ''}`,
+          error: `Falha no envio: ${msg}${hint ? ` — ${hint}` : ''}`,
           detail: JSON.stringify({
-            smtp_error: smtpMsg,
-            smtp_code: smtpCode,
-            smtp_response: smtpResponse,
+            erro: msg,
+            metodo_tentado: hasResend ? 'Resend API (HTTP)' : 'SMTP (Nodemailer)',
             configuracao: {
+              RESEND_API_KEY: hasResend ? process.env.RESEND_API_KEY!.slice(0, 8) + '...' : 'não configurado',
+              EMAIL_FROM: process.env.EMAIL_FROM || 'não configurado',
+              EMAIL_USER: process.env.EMAIL_USER || 'não configurado',
               EMAIL_HOST: process.env.EMAIL_HOST || 'smtp.gmail.com',
               EMAIL_PORT: process.env.EMAIL_PORT || '587',
-              EMAIL_USER: process.env.EMAIL_USER,
-              EMAIL_FROM: process.env.EMAIL_FROM || '(usa EMAIL_USER)',
             },
             dica: hint || null,
           }, null, 2),
