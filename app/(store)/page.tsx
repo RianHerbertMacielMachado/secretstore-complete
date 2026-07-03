@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import HeroSection from '@/components/store/HeroSection'
-import FeaturedProducts from '@/components/store/FeaturedProducts'
 import CategoriesSection from '@/components/store/CategoriesSection'
+import ProductsCarousel from '@/components/store/ProductsCarousel'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +49,7 @@ export default async function HomePage() {
   const storeSubtitle =
     configMap.store_subtitle || 'Produtos digitais com estética gótica e entrega imediata'
 
-  // Normalize products to include `category` field for compatibility with FeaturedProducts
+  // Normalize products to include `category` field for compatibility with ProductCarousel
   const normalizeProduct = (p: typeof featuredProducts[0]) => ({
     ...p,
     mainImage: p.productImages[0]?.url || p.mainImage,
@@ -60,8 +60,10 @@ export default async function HomePage() {
     <>
       <HeroSection storeName={storeName} storeSubtitle={storeSubtitle} />
       <CategoriesSection categories={categories} />
-      <FeaturedProducts products={featuredProducts.map(normalizeProduct)} title="Em Destaque" />
-      <FeaturedProducts products={allProducts.map(normalizeProduct)} title="Todos os Produtos" showAll />
+      {featuredProducts.length > 0 && (
+        <ProductsCarousel products={featuredProducts.map(normalizeProduct)} title="Em Destaque" />
+      )}
+      <ProductsCarousel products={allProducts.map(normalizeProduct)} title="Todos os Produtos" showAll />
     </>
   )
 }
