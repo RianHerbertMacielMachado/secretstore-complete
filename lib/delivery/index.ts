@@ -292,14 +292,22 @@ export async function deliverOrder(orderId: string): Promise<DeliveryResult> {
     }
 
     // ── Enviar e-mail com os links ─────────────────────────────────────────
+    // Aceita qualquer configuração: Resend (RESEND_API_KEY) ou SMTP (EMAIL_USER)
+    const emailConfigured = !!(
+      process.env.RESEND_API_KEY ||
+      process.env.EMAIL_USER ||
+      process.env.EMAIL_HOST
+    )
     let emailSent = false
-    if (process.env.EMAIL_USER) {
+    if (emailConfigured) {
       emailSent = await sendDeliveryEmail({
         to: customerEmail,
         customerName,
         orderId,
         items: deliveryItems,
       })
+    } else {
+      console.warn('[DELIVERY] E-mail não configurado (RESEND_API_KEY ou EMAIL_USER ausentes). Links prontos mas e-mail não enviado.')
     }
 
     // ── Atualizar status do pedido ─────────────────────────────────────────

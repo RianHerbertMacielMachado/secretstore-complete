@@ -129,16 +129,26 @@ function PixPaymentBlock({ orderId }: { orderId: string }) {
     if (paidRef.current) return
     try {
       const res = await fetch(`/api/payment/pix?orderId=${orderId}`)
+      if (!res.ok) return
       const data = await res.json()
+
+      // Aceita PAID vindo do banco (via webhook) OU approved do MP (via polling direto)
       if (data.paymentStatus === 'PAID' || data.paymentStatus === 'approved') {
         setPaymentStatus('PAID')
         paidRef.current = true
-        if (pollingRef.current) clearInterval(pollingRef.current)
-      } else {
-        setPaymentStatus(data.paymentStatus || 'PENDING')
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current)
+          pollingRef.current = null
+        }
+        return
+      }
+
+      // Atualizar status exibido (rejected, cancelled, etc.)
+      if (data.paymentStatus && data.paymentStatus !== 'PENDING') {
+        setPaymentStatus(data.paymentStatus)
       }
     } catch {
-      // silencioso
+      // silencioso — tenta novamente no próximo tick
     }
   }, [orderId])
 
@@ -148,13 +158,19 @@ function PixPaymentBlock({ orderId }: { orderId: string }) {
 
   // Inicia polling após PIX gerado
   useEffect(() => {
-    if (!pix.loading && !pix.error && !paidRef.current) {
-      pollingRef.current = setInterval(checkStatus, 5000)
+    if (!pix.loading && !pix.error && !paidRef.current && pix.pixCopiaECola) {
+      // Verificar imediatamente ao exibir o QR
+      checkStatus()
+      // Depois a cada 3 segundos
+      pollingRef.current = setInterval(checkStatus, 3000)
     }
     return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current)
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
     }
-  }, [pix.loading, pix.error, checkStatus])
+  }, [pix.loading, pix.error, pix.pixCopiaECola, checkStatus])
 
   const handleCopy = async () => {
     if (!pix.pixCopiaECola) return
