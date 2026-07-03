@@ -19,7 +19,6 @@ export default async function HomePage() {
         productImages: { orderBy: { order: 'asc' }, take: 1 },
       },
       orderBy: { createdAt: 'desc' },
-      take: 6,
     }),
     prisma.product.findMany({
       where: { status: 'ACTIVE' },
@@ -33,7 +32,6 @@ export default async function HomePage() {
         productImages: { orderBy: { order: 'asc' }, take: 1 },
       },
       orderBy: { createdAt: 'desc' },
-      take: 12,
     }),
     prisma.category.findMany({
       where: { isVisible: true },
