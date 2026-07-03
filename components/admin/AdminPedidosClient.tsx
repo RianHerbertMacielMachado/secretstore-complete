@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { formatCurrency, formatDateTime } from '@/lib/utils/helpers'
-import { Search, Eye, Send, ChevronDown } from 'lucide-react'
+import { Search, Eye, Send, ChevronDown, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Order {
@@ -59,6 +59,26 @@ export default function AdminPedidosClient({ orders: initialOrders }: { orders: 
       toast.success('Status atualizado!')
     } catch {
       toast.error('Erro ao atualizar status')
+    }
+  }
+
+  const redeliverOrder = async (orderId: string) => {
+    const toastId = toast.loading('Reprocessando entrega...')
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'redeliver' }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        toast.error(`Erro: ${data.delivery?.message || data.error || 'Falha na entrega'}`, { id: toastId })
+      } else {
+        toast.success(`Entrega reprocessada: ${data.delivery?.message || 'OK'}`, { id: toastId })
+        setOrders(orders.map(o => o.id === orderId ? { ...o, deliveryStatus: 'DELIVERED', paymentStatus: 'PAID' } : o))
+      }
+    } catch {
+      toast.error('Erro ao reprocessar entrega', { id: toastId })
     }
   }
 
@@ -153,6 +173,15 @@ export default function AdminPedidosClient({ orders: initialOrders }: { orders: 
                     </td>
                     <td className="p-4">
                       <div className="flex justify-end gap-2">
+                        {order.paymentStatus === 'PAID' && (
+                          <button
+                            onClick={() => redeliverOrder(order.id)}
+                            className="p-1.5 text-white/40 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-all"
+                            title="Reenviar entrega (conceder permissão + email)"
+                          >
+                            <RefreshCw size={14} />
+                          </button>
+                        )}
                         <button
                           onClick={() => setSelectedOrder(order)}
                           className="p-1.5 text-white/40 hover:text-neon-pink hover:bg-neon-pink/10 rounded-lg transition-all"

@@ -152,12 +152,27 @@ async function getServiceAccountToken(): Promise<string | null> {
  * Compartilha um arquivo ou pasta do Drive especificamente com o e-mail do cliente.
  * Funciona igual para arquivo e pasta — a API do Drive aplica herança automaticamente.
  *
- * @returns a URL de acesso direto já formatada, ou null em caso de falha
+/**
+ * Resultado de grantDrivePermission com distinção entre sucesso e fallback.
+ */
+export interface GrantPermissionResult {
+  url: string
+  permissionGranted: boolean
+  error?: string
+}
+
+/**
+ * Compartilha um arquivo ou pasta do Drive especificamente com o e-mail do cliente.
+ *
+ * @returns { url, permissionGranted, error? }
+ *   - url: link de acesso (sempre retorna, mesmo em fallback)
+ *   - permissionGranted: true se a API do Drive confirmou a permissão
+ *   - error: mensagem de erro se permissionGranted=false
  */
 export async function grantDrivePermission(
   driveUrl: string,
   customerEmail: string
-): Promise<string | null> {
+): Promise<GrantPermissionResult | null> {
   const fileId = extractDriveId(driveUrl)
   if (!fileId) {
     console.error('[DRIVE] Não foi possível extrair o ID da URL:', driveUrl)
@@ -169,9 +184,8 @@ export async function grantDrivePermission(
 
   const accessToken = await getServiceAccountToken()
   if (!accessToken) {
-    // Sem service account configurado — retorna o link direto mesmo sem permissão individual
-    console.warn('[DRIVE] Sem service account. Retornando link direto sem permissão individual.')
-    return viewUrl
+    console.warn('[DRIVE] Sem service account. Retornando link sem permissão individual.')
+    return { url: viewUrl, permissionGranted: false, error: 'Service account não configurado' }
   }
 
   try {
@@ -184,26 +198,25 @@ export async function grantDrivePermission(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type: 'user',           // específico para este usuário
-          role: 'reader',         // somente leitura
+          type: 'user',
+          role: 'reader',
           emailAddress: customerEmail,
-          sendNotificationEmail: false, // não envia email do Google — o nosso sistema envia
+          sendNotificationEmail: false,
         }),
       }
     )
 
     if (!permRes.ok) {
-      const err = await permRes.text()
-      console.error(`[DRIVE] Falha ao conceder permissão para ${customerEmail}:`, err)
-      // Mesmo com falha na permissão, retorna o link para não bloquear a entrega
-      return viewUrl
+      const errBody = await permRes.text()
+      console.error(`[DRIVE] Falha ao conceder permissão para ${customerEmail} no recurso ${fileId}:`, errBody)
+      return { url: viewUrl, permissionGranted: false, error: `Drive API ${permRes.status}: ${errBody}` }
     }
 
-    console.log(`[DRIVE] Permissão concedida para ${customerEmail} no recurso ${fileId} (${isFolder ? 'pasta' : 'arquivo'})`)
-    return viewUrl
-  } catch (error) {
+    console.log(`[DRIVE] ✅ Permissão concedida para ${customerEmail} no recurso ${fileId} (${isFolder ? 'pasta' : 'arquivo'})`)
+    return { url: viewUrl, permissionGranted: true }
+  } catch (error: any) {
     console.error('[DRIVE] Erro ao conceder permissão:', error)
-    return viewUrl
+    return { url: viewUrl, permissionGranted: false, error: error.message }
   }
 }
 
@@ -244,8 +257,21 @@ export async function deliverOrder(orderId: string): Promise<DeliveryResult> {
       return { success: true, method: 'none', message: 'Já foi entregue' }
     }
 
-    const customerEmail = order.customerEmail || order.user?.email || ''
-    const customerName  = order.customerName  || order.user?.name  || 'Cliente'
+    // Prioridade: customerEmail do pedido → email do usuário logado → busca direta no banco
+    let customerEmail = order.customerEmail || order.user?.email || ''
+    let customerName  = order.customerName  || order.user?.name  || 'Cliente'
+
+    // Fallback: se ainda vazio, buscar o user diretamente no banco
+    if (!customerEmail && order.userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: order.userId },
+        select: { email: true, name: true },
+      })
+      customerEmail = user?.email || ''
+      customerName  = user?.name  || customerName
+    }
+
+    console.log(`[DELIVERY] orderId=${orderId} customerEmail="${customerEmail}" customerName="${customerName}"`)
 
     if (!customerEmail) {
       return { success: false, method: 'none', message: 'E-mail do cliente não encontrado' }
@@ -257,24 +283,44 @@ export async function deliverOrder(orderId: string): Promise<DeliveryResult> {
 
     for (const item of order.items) {
       const product = item.product
-      if (!product?.driveLink) continue
+      if (!product?.driveLink) {
+        console.warn(`[DELIVERY] Produto "${product?.name}" sem driveLink — ignorado`)
+        continue
+      }
 
       const method = product.driveDeliveryMethod || 'LINK'
 
-      if (method === 'GRANT_PERMISSION') {
-        // Conceder permissão individual e obter link final
-        const link = await grantDrivePermission(product.driveLink, customerEmail)
-        if (link) {
-          deliveryItems.push({ name: product.name, link, method })
+      // Normaliza valores legados
+      const normalizedMethod =
+        method === 'PERMISSION' ? 'GRANT_PERMISSION' :
+        method === 'FOLDER'     ? 'SHARED_FOLDER'    :
+        method
+
+      console.log(`[DELIVERY] item="${product.name}" method="${normalizedMethod}" driveLink="${product.driveLink}"`)
+
+      if (normalizedMethod === 'GRANT_PERMISSION') {
+        if (!customerEmail) {
+          errors.push(`Sem e-mail do cliente para conceder permissão em "${product.name}"`)
+          continue
+        }
+        const result = await grantDrivePermission(product.driveLink, customerEmail)
+        if (!result) {
+          errors.push(`URL inválida do Drive para "${product.name}"`)
+        } else if (!result.permissionGranted) {
+          // Logar o erro mas ainda incluir o link para não bloquear entrega
+          console.error(`[DELIVERY] Permissão NÃO concedida para "${product.name}": ${result.error}`)
+          errors.push(`Permissão não concedida para "${product.name}": ${result.error}`)
+          // Inclui o link mesmo sem permissão para não deixar cliente sem acesso
+          deliveryItems.push({ name: product.name, link: result.url, method: normalizedMethod })
         } else {
-          errors.push(`Falha ao conceder permissão para "${product.name}"`)
+          deliveryItems.push({ name: product.name, link: result.url, method: normalizedMethod })
         }
       } else {
-        // LINK ou SHARED_FOLDER — apenas envia o link como está
+        // LINK ou SHARED_FOLDER — envia o link como está
         deliveryItems.push({
           name: product.name,
           link: product.driveLink,
-          method,
+          method: normalizedMethod,
         })
       }
     }

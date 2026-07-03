@@ -272,17 +272,26 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      const resultUrl = await grantDrivePermission(url, email)
+      const result = await grantDrivePermission(url, email)
 
-      if (!resultUrl) {
+      if (!result) {
         return NextResponse.json({
           success: false,
-          error: 'Falha ao conceder permissão. Verifique se a Service Account tem acesso ao arquivo/pasta.',
+          error: 'Não foi possível extrair o ID do Google Drive da URL informada.',
+          detail: JSON.stringify({ url_informada: url, id_extraido: fileId, email_destino: email }, null, 2),
+        })
+      }
+
+      if (!result.permissionGranted) {
+        return NextResponse.json({
+          success: false,
+          error: `Falha ao conceder permissão: ${result.error}`,
           detail: JSON.stringify({
             url_informada: url,
             id_extraido: fileId,
             email_destino: email,
             service_account: googleSaEmail,
+            erro_drive_api: result.error,
           }, null, 2),
         })
       }
@@ -294,7 +303,7 @@ export async function POST(req: NextRequest) {
           url_original: url,
           id_extraido: fileId,
           email_destino: email,
-          link_resultado: resultUrl,
+          link_resultado: result.url,
           service_account: googleSaEmail,
         }, null, 2),
       })
