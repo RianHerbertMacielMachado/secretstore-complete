@@ -60,11 +60,8 @@ export default function StoreLayout({
         tickerHeight={tickerHeight}
       />
 
-      {/* Conteúdo principal — padding-top considera navbar (64px) + faixa */}
-      <main
-        className="flex-1"
-        style={{ paddingTop: `${64 + tickerHeight}px` }}
-      >
+      {/* Conteúdo principal — sem padding-top pois o navbar não é mais fixo */}
+      <main className="flex-1">
         {children}
       </main>
 

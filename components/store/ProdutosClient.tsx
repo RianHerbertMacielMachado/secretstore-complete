@@ -219,7 +219,7 @@ export default function ProdutosClient({
   }, [products, currentPage, productsPerPage])
 
   return (
-    <div className="min-h-screen pt-24 pb-20">
+    <div className="min-h-screen pb-20">
       {/* Hero Banner */}
       <div className="relative py-16 px-4 sm:px-6 lg:px-8 border-b border-white/5 mb-8 overflow-hidden">
         {/* Imagem de fundo da subcategoria (quando configurada pelo admin) */}
