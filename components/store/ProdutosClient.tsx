@@ -39,6 +39,8 @@ interface Props {
   categorySlug?: string
   /** Quantidade de produtos por página vinda das configurações da loja */
   productsPerPage?: number
+  /** Imagem de fundo do banner da página de subcategoria (opcional) */
+  subCategoryBannerImage?: string | null
 }
 
 function ProductCard({ product, index, view }: { product: Product; index: number; view: 'grid' | 'list' }) {
@@ -167,6 +169,7 @@ export default function ProdutosClient({
   categoryName,
   categorySlug,
   productsPerPage = 15,
+  subCategoryBannerImage,
 }: Props) {
   const router = useRouter()
   const [search, setSearch] = useState(searchQuery)
@@ -219,7 +222,20 @@ export default function ProdutosClient({
     <div className="min-h-screen pt-24 pb-20">
       {/* Hero Banner */}
       <div className="relative py-16 px-4 sm:px-6 lg:px-8 border-b border-white/5 mb-8 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,0,127,0.08)_0%,_transparent_60%)]" />
+        {/* Imagem de fundo da subcategoria (quando configurada pelo admin) */}
+        {subCategoryBannerImage ? (
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${subCategoryBannerImage})` }}
+            />
+            {/* Overlay escuro para garantir legibilidade do texto */}
+            <div className="absolute inset-0 bg-black/55" />
+          </>
+        ) : (
+          /* Gradiente padrão quando não há imagem configurada */
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,0,127,0.08)_0%,_transparent_60%)]" />
+        )}
         <div className="max-w-7xl mx-auto relative z-10">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}

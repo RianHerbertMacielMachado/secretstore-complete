@@ -18,6 +18,7 @@ interface SubCategory {
   slug: string
   description: string | null
   image: string | null
+  bannerImage: string | null  // Imagem de fundo do banner da página
   isVisible: boolean
   sortOrder: number
   categoryId: string
@@ -37,7 +38,7 @@ export default function AdminSubCategoriasClient({ subCategories: init, categori
   const [isLoading, setIsLoading] = useState(false)
   const [filterCategoryId, setFilterCategoryId] = useState('')
   const [form, setForm] = useState({
-    name: '', slug: '', description: '', image: '',
+    name: '', slug: '', description: '', image: '', bannerImage: '',
     isVisible: true, sortOrder: 0,
     categoryId: categories[0]?.id || '',
   })
@@ -48,7 +49,7 @@ export default function AdminSubCategoriasClient({ subCategories: init, categori
 
   const resetForm = () => {
     setForm({
-      name: '', slug: '', description: '', image: '',
+      name: '', slug: '', description: '', image: '', bannerImage: '',
       isVisible: true, sortOrder: 0,
       categoryId: categories[0]?.id || '',
     })
@@ -59,7 +60,8 @@ export default function AdminSubCategoriasClient({ subCategories: init, categori
     setEditing(sub)
     setForm({
       name: sub.name, slug: sub.slug, description: sub.description || '',
-      image: sub.image || '', isVisible: sub.isVisible, sortOrder: sub.sortOrder,
+      image: sub.image || '', bannerImage: sub.bannerImage || '',
+      isVisible: sub.isVisible, sortOrder: sub.sortOrder,
       categoryId: sub.categoryId,
     })
     setShowForm(true)
@@ -278,10 +280,22 @@ export default function AdminSubCategoriasClient({ subCategories: init, categori
                 </div>
 
                 <ImageUpload
-                  label="Imagem da Sub-Categoria"
+                  label="Imagem da Sub-Categoria (miniatura)"
                   value={form.image}
                   onChange={(url) => setForm(prev => ({ ...prev, image: url }))}
                 />
+
+                {/* Banner Image */}
+                <div>
+                  <ImageUpload
+                    label="Imagem de Fundo do Banner da Página"
+                    value={form.bannerImage}
+                    onChange={(url) => setForm(prev => ({ ...prev, bannerImage: url }))}
+                  />
+                  <p className="text-xs text-white/30 mt-1">
+                    Recomendado: 1920×400px · JPG/PNG · máx. 2MB · Overlay escuro será aplicado automaticamente
+                  </p>
+                </div>
 
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-2 cursor-pointer">

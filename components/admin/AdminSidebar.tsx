@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Package, FolderOpen, Layers, ShoppingCart, Users,
-  Tag, Settings, BookOpen, Palette, Menu, X, ChevronRight, FlaskConical
+  Tag, Settings, BookOpen, Palette, Menu, X, ChevronRight, FlaskConical,
+  Sliders, AlignLeft, Gift
 } from 'lucide-react'
 import { cn } from '@/lib/utils/helpers'
 
@@ -18,6 +19,11 @@ const navItems = [
   { href: '/admin/clientes', label: 'Clientes', icon: Users },
   { href: '/admin/cupons', label: 'Cupons', icon: Tag },
   { href: '/admin/layouts', label: 'Layouts', icon: Palette },
+  // ── Personalização ─────────────────────────────────────────────────────
+  { href: '/admin/carrossel', label: 'Carrossel', icon: Sliders },
+  { href: '/admin/faixa', label: 'Faixa do Topo', icon: AlignLeft },
+  { href: '/admin/popup', label: 'Popup de Cupom', icon: Gift },
+  // ── Ferramentas ────────────────────────────────────────────────────────
   { href: '/admin/guia-configuracao', label: 'Guia de Config', icon: BookOpen, highlight: true },
   { href: '/admin/testes', label: 'Testes', icon: FlaskConical },
   { href: '/admin/configuracoes', label: 'Configurações', icon: Settings },

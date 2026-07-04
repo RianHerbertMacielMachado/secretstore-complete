@@ -82,6 +82,7 @@ model SubCategory {
   slug        String    @unique
   description String?
   image       String?
+  bannerImage String?   // Imagem de fundo do banner da página de subcategoria
   isVisible   Boolean   @default(true)
   sortOrder   Int       @default(0)
   categoryId  String
@@ -196,3 +197,34 @@ model WebhookLog {
   orderId   String?
   createdAt DateTime @default(now())
 }
+
+// ── Carrossel configurável da home ─────────────────────────────────────────────
+model CarouselItem {
+  id        String   @id @default(cuid())
+  name      String                      // Texto exibido sobre a imagem
+  image     String                      // URL da imagem de fundo
+  link      String                      // URL de redirecionamento ao clicar
+  sortOrder Int      @default(0)        // Ordem de exibição
+  isActive  Boolean  @default(true)     // Visível no frontend
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Ticker/Faixa de avisos do topo ─────────────────────────────────────────────
+model TickerItem {
+  id        String   @id @default(cuid())
+  text      String                      // Texto do aviso
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Configurações do ticker (global) ───────────────────────────────────────────
+// Armazenado em SiteConfig com chaves: ticker_enabled, ticker_speed, ticker_color
+
+// ── Popup de cupom ─────────────────────────────────────────────────────────────
+// Armazenado em SiteConfig com chaves:
+//   popup_enabled, popup_discount, popup_code, popup_expiry_hours,
+//   popup_cta_text, popup_cta_link, popup_delay_seconds
+

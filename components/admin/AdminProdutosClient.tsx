@@ -443,8 +443,8 @@ export default function AdminProdutosClient({ products: initialProducts, subCate
                     className="input-dark"
                   >
                     <option value="LINK" style={{ background: '#0d0d0d' }}>Link Direto</option>
-                    <option value="FOLDER" style={{ background: '#0d0d0d' }}>Pasta Compartilhada</option>
-                    <option value="PERMISSION" style={{ background: '#0d0d0d' }}>Conceder Permissão</option>
+                    <option value="SHARED_FOLDER" style={{ background: '#0d0d0d' }}>Pasta Compartilhada</option>
+                    <option value="GRANT_PERMISSION" style={{ background: '#0d0d0d' }}>Conceder Permissão</option>
                   </select>
                 </div>
 

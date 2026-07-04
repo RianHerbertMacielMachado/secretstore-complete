@@ -8,9 +8,10 @@ import { useCartStore } from '@/stores/cartStore'
 
 interface StoreNavbarProps {
   storeName?: string
+  tickerHeight?: number  // Altura da faixa do topo (px), para deslocar o navbar
 }
 
-export default function StoreNavbar({ storeName = 'DarkShop' }: StoreNavbarProps) {
+export default function StoreNavbar({ storeName = 'DarkShop', tickerHeight = 0 }: StoreNavbarProps) {
   const { data: session } = useSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const cartCount = useCartStore((s) => s.items.reduce((acc, i) => acc + i.quantity, 0))
@@ -21,8 +22,10 @@ export default function StoreNavbar({ storeName = 'DarkShop' }: StoreNavbarProps
   const namePart2 = storeName.slice(mid).toUpperCase()
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 backdrop-blur-md"
-      style={{ background: 'rgba(0,0,0,0.85)' }}>
+    <nav
+      className="fixed left-0 right-0 z-50 border-b border-white/10 backdrop-blur-md"
+      style={{ background: 'rgba(0,0,0,0.85)', top: `${tickerHeight}px` }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

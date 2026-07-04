@@ -67,6 +67,7 @@ export default async function SubCategoriaSlugPage({ params }: Props) {
       categoryName={subCategory.category.name}
       categorySlug={params.slug}
       productsPerPage={productsPerPage}
+      subCategoryBannerImage={subCategory.bannerImage ?? null}
     />
   )
 }
