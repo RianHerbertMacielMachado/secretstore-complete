@@ -32,6 +32,8 @@ export default async function StoreGroupLayout({ children }: { children: React.R
             // Configurações do popup
             'popup_enabled', 'popup_discount', 'popup_code',
             'popup_expiry_hours', 'popup_cta_text', 'popup_cta_link', 'popup_delay_seconds',
+            'popup_design',
+            'popup_color_accent', 'popup_color_text', 'popup_color_bg', 'popup_color_timer_bg',
           ],
         },
       },
@@ -65,6 +67,13 @@ export default async function StoreGroupLayout({ children }: { children: React.R
     ctaText: map.popup_cta_text || 'RESGATAR OFERTA',
     ctaLink: map.popup_cta_link || '/',
     delaySeconds: parseInt(map.popup_delay_seconds || '3', 10),
+    design: (map.popup_design || 'classic') as 'classic' | 'minimal' | 'bold',
+    colors: {
+      accentColor:  map.popup_color_accent   || '#dc2626',
+      textColor:    map.popup_color_text     || '#ffffff',
+      bgColor:      map.popup_color_bg       || '#0d0d0d',
+      timerBg:      map.popup_color_timer_bg || '#1f1f1f',
+    },
   } : null
 
   return (

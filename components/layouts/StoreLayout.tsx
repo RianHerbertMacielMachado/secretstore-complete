@@ -2,20 +2,11 @@ import StoreNavbar from '@/components/shared/StoreNavbar'
 import StoreFooter from '@/components/shared/StoreFooter'
 import TopTicker from '@/components/store/TopTicker'
 import CouponPopup from '@/components/store/CouponPopup'
+import type { PopupConfig } from '@/components/store/CouponPopup'
 
 interface TickerItem {
   id: string
   text: string
-}
-
-interface PopupConfig {
-  enabled: boolean
-  discount: string
-  code: string
-  expiryHours: number
-  ctaText: string
-  ctaLink: string
-  delaySeconds: number
 }
 
 interface StoreLayoutProps {
@@ -67,7 +58,7 @@ export default function StoreLayout({
 
       <StoreFooter storeName={storeName} discordUrl={discordUrl} />
 
-      {/* Popup flutuante de cupom */}
+      {/* Popup flutuante de cupom — fixo no canto inferior direito */}
       {popupConfig && <CouponPopup config={popupConfig} />}
     </div>
   )
