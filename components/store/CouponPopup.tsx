@@ -482,13 +482,47 @@ export default function CouponPopup({ config }: { config: PopupConfig }) {
         className="fixed bottom-6 right-6 z-50"
         style={{
           filter: `drop-shadow(0 8px 32px ${colors.accentColor}40)`,
-          // Animação de entrada suave
           animation: 'popup-slide-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both',
         }}
       >
-        {design === 'classic' && <ClassicPopup {...renderProps} />}
-        {design === 'minimal' && <MinimalPopup {...renderProps} />}
-        {design === 'bold'    && <BoldPopup    {...renderProps} />}
+        {/* Estado minimizado: caixinha de presente compacta */}
+        {isCollapsed ? (
+          <button
+            onClick={() => setIsCollapsed(false)}
+            className="relative group flex items-center justify-center rounded-2xl shadow-2xl transition-transform hover:scale-110 active:scale-95"
+            style={{
+              width: 64,
+              height: 64,
+              background: colors.accentColor,
+              boxShadow: `0 8px 32px ${colors.accentColor}60`,
+            }}
+            aria-label="Abrir oferta especial"
+          >
+            {/* Ícone presente */}
+            <Gift size={28} className="text-white drop-shadow" />
+
+            {/* Badge com % de desconto */}
+            <span
+              className="absolute -top-2 -right-2 min-w-[26px] h-[26px] px-1 rounded-full flex items-center justify-center text-[11px] font-black shadow-lg border-2 border-white/20"
+              style={{ background: colors.bgColor || '#0d0d0d', color: colors.accentColor }}
+            >
+              {config.discount}%
+            </span>
+
+            {/* Pulso animado */}
+            <span
+              className="absolute inset-0 rounded-2xl animate-ping opacity-20"
+              style={{ background: colors.accentColor }}
+            />
+          </button>
+        ) : (
+          /* Estado expandido: card completo do design escolhido */
+          <>
+            {design === 'classic' && <ClassicPopup {...renderProps} />}
+            {design === 'minimal' && <MinimalPopup {...renderProps} />}
+            {design === 'bold'    && <BoldPopup    {...renderProps} />}
+          </>
+        )}
       </div>
 
       <style>{`
