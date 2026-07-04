@@ -379,7 +379,7 @@ interface RenderProps {
 
 export default function CouponPopup({ config }: { config: PopupConfig }) {
   const [isVisible, setIsVisible]       = useState(false)
-  const [isCollapsed, setIsCollapsed]   = useState(false)
+  const [isCollapsed, setIsCollapsed]   = useState(true)
   const [isClosed, setIsClosed]         = useState(false)
   const [copied, setCopied]             = useState(false)
   const [timeLeft, setTimeLeft]         = useState<TimeLeft | null>(null)
