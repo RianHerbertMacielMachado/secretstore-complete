@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -16,81 +16,69 @@ interface Props {
   title?: string
 }
 
-/**
- * HeroCarousel — Carrossel configurável pelo admin
- * Miniaturas lado a lado rolando infinitamente (estilo ProductsCarousel)
- * Lista triplicada para loop seamless · auto-scroll · drag · setas
- */
+const CARD_W = 208  // largura do card em px
+const GAP = 16      // gap entre cards em px
+const STEP = CARD_W + GAP
+const SPEED = 0.6   // px por frame
+
 export default function HeroCarousel({ items, title = 'Destaques' }: Props) {
   const trackRef = useRef<HTMLDivElement>(null)
-  const rafRef = useRef<number>(0)
   const posRef = useRef(0)
+  const rafRef = useRef(0)
   const isPausedRef = useRef(false)
   const isDraggingRef = useRef(false)
   const dragStartXRef = useRef(0)
   const dragStartPosRef = useRef(0)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(true)
 
-  // Triplicar para loop seamless
-  const tripled = items.length > 0 ? [...items, ...items, ...items] : []
+  // Garante que temos itens suficientes para nunca mostrar vazio
+  // Duplicamos até ter pelo menos 12 cópias ou cobrir 3000px
+  if (items.length === 0) return null
 
-  const CARD_W = 220   // largura do card em px (inclui gap)
-  const SPEED = 0.5    // px por frame (~30px/s a 60fps)
+  const minCopies = Math.max(4, Math.ceil(3200 / (items.length * STEP)) + 2)
+  const repeated: CarouselItem[] = []
+  for (let i = 0; i < minCopies; i++) {
+    items.forEach((item) => repeated.push(item))
+  }
 
-  // Largura total de um terço da lista (para resetar o loop)
-  const segmentW = items.length * CARD_W
+  // Largura de um bloco original
+  const blockW = items.length * STEP
 
-  // Inicia no terço do meio para poder rolar para ambos os lados
+  // Inicia no 2º bloco para permitir scroll nos dois sentidos
   useEffect(() => {
-    if (!trackRef.current || segmentW === 0) return
-    posRef.current = segmentW
-    trackRef.current.style.transform = `translateX(-${posRef.current}px)`
-  }, [segmentW])
+    posRef.current = blockW
+    if (trackRef.current) {
+      trackRef.current.style.transform = `translateX(-${posRef.current}px)`
+    }
+  }, [blockW])
 
-  // Auto-scroll com requestAnimationFrame
+  // Auto-scroll
   useEffect(() => {
-    if (items.length === 0) return
-
     const animate = () => {
       if (!isPausedRef.current && !isDraggingRef.current && trackRef.current) {
         posRef.current += SPEED
-
-        // Quando ultrapassa o 2º terço, volta para o 1º terço (loop seamless)
-        if (posRef.current >= segmentW * 2) {
-          posRef.current -= segmentW
+        // Loop: quando passa do final do 2º bloco, volta ao início do 2º bloco
+        if (posRef.current >= blockW * (minCopies - 2)) {
+          posRef.current -= blockW * (minCopies - 4)
         }
-        // Quando recua antes do 1º terço, vai para o 2º terço
-        if (posRef.current < segmentW) {
-          posRef.current += segmentW
-        }
-
         trackRef.current.style.transform = `translateX(-${posRef.current}px)`
       }
       rafRef.current = requestAnimationFrame(animate)
     }
-
     rafRef.current = requestAnimationFrame(animate)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [segmentW])
+  }, [blockW, minCopies])
 
-  // Scroll manual com setas
-  const scrollBy = (direction: 'left' | 'right') => {
-    const delta = direction === 'right' ? CARD_W * 3 : -CARD_W * 3
+  const scrollBy = (dir: 'left' | 'right') => {
+    if (!trackRef.current) return
+    const delta = dir === 'right' ? STEP * 3 : -STEP * 3
     posRef.current += delta
-    // Clamp no loop
-    if (posRef.current >= segmentW * 2) posRef.current -= segmentW
-    if (posRef.current < segmentW) posRef.current += segmentW
-    if (trackRef.current) {
-      trackRef.current.style.transition = 'transform 0.35s ease'
-      trackRef.current.style.transform = `translateX(-${posRef.current}px)`
-      setTimeout(() => {
-        if (trackRef.current) trackRef.current.style.transition = ''
-      }, 360)
-    }
+    if (posRef.current >= blockW * (minCopies - 2)) posRef.current -= blockW * (minCopies - 4)
+    if (posRef.current < blockW) posRef.current += blockW
+    trackRef.current.style.transition = 'transform 0.35s ease'
+    trackRef.current.style.transform = `translateX(-${posRef.current}px)`
+    setTimeout(() => { if (trackRef.current) trackRef.current.style.transition = '' }, 360)
   }
 
-  // Drag handlers (mouse + touch)
   const onDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     isDraggingRef.current = true
     isPausedRef.current = true
@@ -102,73 +90,63 @@ export default function HeroCarousel({ items, title = 'Destaques' }: Props) {
   const onDragMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDraggingRef.current || !trackRef.current) return
     const x = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const delta = dragStartXRef.current - x
-    posRef.current = dragStartPosRef.current + delta
+    posRef.current = dragStartPosRef.current + (dragStartXRef.current - x)
     trackRef.current.style.transform = `translateX(-${posRef.current}px)`
   }
 
   const onDragEnd = () => {
     isDraggingRef.current = false
-    // Clamp no loop
-    if (posRef.current >= segmentW * 2) posRef.current -= segmentW
-    if (posRef.current < segmentW) posRef.current += segmentW
-    setTimeout(() => { isPausedRef.current = false }, 800)
+    setTimeout(() => { isPausedRef.current = false }, 600)
   }
 
-  if (items.length === 0) return null
-
   return (
-    <section className="py-10 px-4 sm:px-6 lg:px-8">
+    <section className="py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="font-gothic text-2xl font-bold text-white">{title}</h2>
             <div className="h-0.5 w-12 bg-red-600 mt-1 rounded-full" />
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => scrollBy('left')}
-              className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-all"
-              aria-label="Anterior"
-            >
+            <button onClick={() => scrollBy('left')}
+              className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-all">
               <ChevronLeft size={18} />
             </button>
-            <button
-              onClick={() => scrollBy('right')}
-              className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-all"
-              aria-label="Próximo"
-            >
+            <button onClick={() => scrollBy('right')}
+              className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-all">
               <ChevronRight size={18} />
             </button>
           </div>
         </div>
 
-        {/* Track container */}
+        {/* Track */}
         <div
           className="relative overflow-hidden select-none"
+          style={{ cursor: 'grab' }}
           onMouseEnter={() => { isPausedRef.current = true }}
-          onMouseLeave={() => { if (!isDraggingRef.current) isPausedRef.current = false }}
+          onMouseLeave={() => { onDragEnd(); isPausedRef.current = false }}
           onMouseDown={onDragStart}
           onMouseMove={onDragMove}
           onMouseUp={onDragEnd}
           onTouchStart={onDragStart}
           onTouchMove={onDragMove}
           onTouchEnd={onDragEnd}
-          style={{ cursor: isDraggingRef.current ? 'grabbing' : 'grab' }}
         >
           {/* Fades laterais */}
-          <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-[var(--dark-bg,#0a0a0a)] to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[var(--dark-bg,#0a0a0a)] to-transparent z-10 pointer-events-none" />
+          <div className="absolute left-0 top-0 bottom-0 w-10 z-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to right, var(--dark-bg, #0a0a0a), transparent)' }} />
+          <div className="absolute right-0 top-0 bottom-0 w-10 z-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to left, var(--dark-bg, #0a0a0a), transparent)' }} />
 
-          {/* Faixa rolante */}
           <div
             ref={trackRef}
-            className="flex gap-4 will-change-transform"
-            style={{ width: `${tripled.length * CARD_W}px` }}
+            className="flex will-change-transform"
+            style={{ gap: `${GAP}px`, width: `${repeated.length * STEP}px` }}
           >
-            {tripled.map((item, idx) => (
-              <CarouselItemCard key={`${item.id}-${idx}`} item={item} />
+            {repeated.map((item, idx) => (
+              <ItemCard key={`${item.id}-${idx}`} item={item} />
             ))}
           </div>
         </div>
@@ -177,16 +155,14 @@ export default function HeroCarousel({ items, title = 'Destaques' }: Props) {
   )
 }
 
-// Card individual do carrossel
-function CarouselItemCard({ item }: { item: CarouselItem }) {
+function ItemCard({ item }: { item: CarouselItem }) {
   return (
     <Link
       href={item.link}
       draggable={false}
-      className="group relative flex-shrink-0 rounded-xl overflow-hidden border border-white/10 hover:border-red-500/50 transition-all duration-300"
-      style={{ width: '204px', height: '260px' }}
+      className="group relative flex-shrink-0 rounded-xl overflow-hidden border border-white/10 hover:border-red-500/50 transition-colors duration-300"
+      style={{ width: `${CARD_W}px`, height: '260px' }}
     >
-      {/* Imagem de fundo */}
       {item.image ? (
         <img
           src={item.image}
@@ -198,24 +174,13 @@ function CarouselItemCard({ item }: { item: CarouselItem }) {
         <div className="absolute inset-0 bg-white/5" />
       )}
 
-      {/* Overlay gradiente — escurece embaixo para o texto */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
-
-      {/* Blur sutil nas bordas laterais */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(ellipse 70% 50% at 50% 50%, transparent 40%, rgba(0,0,0,0.3) 100%)',
-        }}
-      />
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
       {/* Nome */}
       <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
-        <p className="text-white font-semibold text-sm leading-tight line-clamp-2 drop-shadow-sm">
-          {item.name}
-        </p>
-        {/* Indicador de clique */}
-        <span className="text-red-400 text-xs mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <p className="text-white font-semibold text-sm leading-tight line-clamp-2">{item.name}</p>
+        <span className="text-red-400 text-xs mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity block">
           Ver mais →
         </span>
       </div>

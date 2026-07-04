@@ -199,6 +199,17 @@ model WebhookLog {
 }
 
 // ── Carrossel configurável da home ─────────────────────────────────────────────
+// ── Imagens de fundo do HeroSection ───────────────────────────────────────────
+// SiteConfig key: hero_interval (segundos entre troca, default "5")
+model HeroBg {
+  id        String   @id @default(cuid())
+  image     String                      // URL da imagem de fundo
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model CarouselItem {
   id        String   @id @default(cuid())
   name      String                      // Texto exibido sobre a imagem

@@ -6,7 +6,7 @@ import { useState } from 'react'
 import {
   LayoutDashboard, Package, FolderOpen, Layers, ShoppingCart, Users,
   Tag, Settings, BookOpen, Palette, Menu, X, ChevronRight, FlaskConical,
-  Sliders, AlignLeft, Gift
+  Sliders, AlignLeft, Gift, Image as ImageIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils/helpers'
 
@@ -20,6 +20,7 @@ const navItems = [
   { href: '/admin/cupons', label: 'Cupons', icon: Tag },
   { href: '/admin/layouts', label: 'Layouts', icon: Palette },
   // ── Personalização ─────────────────────────────────────────────────────
+  { href: '/admin/hero-bg', label: 'Fundo do Hero', icon: ImageIcon },
   { href: '/admin/carrossel', label: 'Carrossel', icon: Sliders },
   { href: '/admin/faixa', label: 'Faixa do Topo', icon: AlignLeft },
   { href: '/admin/popup', label: 'Popup de Cupom', icon: Gift },
