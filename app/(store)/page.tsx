@@ -64,15 +64,15 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Carrossel Hero — itens configurados pelo admin (substitui o antigo ProductsCarousel no topo) */}
-      {carouselItems.length > 0 ? (
-        <HeroCarousel items={carouselItems} />
-      ) : (
-        // Fallback: HeroSection padrão quando nenhum item do carrossel foi configurado
-        <HeroSection storeName={storeName} storeSubtitle={storeSubtitle} />
-      )}
+      {/* HeroSection sempre no topo — não é afetado pelo carrossel admin */}
+      <HeroSection storeName={storeName} storeSubtitle={storeSubtitle} />
 
       <CategoriesSection categories={categories} />
+
+      {/* Carrossel configurável pelo admin — aparece entre as categorias e os produtos */}
+      {carouselItems.length > 0 && (
+        <HeroCarousel items={carouselItems} />
+      )}
 
       {/* Carrossel de produtos em destaque */}
       {featuredProducts.length > 0 && (
