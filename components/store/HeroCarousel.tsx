@@ -101,7 +101,7 @@ export default function HeroCarousel({ items, title = 'Destaques' }: Props) {
 
   return (
     <section className="py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="site-container">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
@@ -121,9 +121,9 @@ export default function HeroCarousel({ items, title = 'Destaques' }: Props) {
           </div>
         </div>
 
-        {/* Track */}
+        {/* Track — vai de borda a borda */}
         <div
-          className="relative overflow-hidden select-none"
+          className="relative w-screen left-1/2 -translate-x-1/2 overflow-hidden select-none"
           style={{ cursor: 'grab' }}
           onMouseEnter={() => { isPausedRef.current = true }}
           onMouseLeave={() => { onDragEnd(); isPausedRef.current = false }}
@@ -134,11 +134,11 @@ export default function HeroCarousel({ items, title = 'Destaques' }: Props) {
           onTouchMove={onDragMove}
           onTouchEnd={onDragEnd}
         >
-          {/* Fades laterais */}
-          <div className="absolute left-0 top-0 bottom-0 w-10 z-10 pointer-events-none"
-            style={{ background: 'linear-gradient(to right, var(--dark-bg, #0a0a0a), transparent)' }} />
-          <div className="absolute right-0 top-0 bottom-0 w-10 z-10 pointer-events-none"
-            style={{ background: 'linear-gradient(to left, var(--dark-bg, #0a0a0a), transparent)' }} />
+          {/* Fades laterais — usando cor do fundo do site */}
+          <div className="absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to right, #0a0a0f, transparent)' }} />
+          <div className="absolute right-0 top-0 bottom-0 w-16 z-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to left, #0a0a0f, transparent)' }} />
 
           <div
             ref={trackRef}

@@ -25,7 +25,7 @@ export default function CategoriesSection({ categories }: { categories: Category
 
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8 border-y border-white/5">
-      <div className="max-w-7xl mx-auto">
+      <div className="site-container">
         <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-2">
           <motion.div
             initial={{ opacity: 0, x: -20 }}

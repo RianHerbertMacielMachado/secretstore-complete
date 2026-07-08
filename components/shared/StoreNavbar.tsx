@@ -26,7 +26,7 @@ export default function StoreNavbar({ storeName = 'DarkShop' }: StoreNavbarProps
       className="w-full z-50 border-b border-white/10 backdrop-blur-md"
       style={{ background: 'rgba(0,0,0,0.85)' }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="site-container">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">

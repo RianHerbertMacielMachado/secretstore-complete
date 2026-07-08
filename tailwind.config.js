@@ -6,6 +6,17 @@ module.exports = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    screens: {
+      'sm':  '640px',
+      'md':  '768px',
+      'lg':  '1024px',
+      'xl':  '1280px',
+      '2xl': '1536px',
+      '3xl': '1920px',  // Full HD+, monitores 27"
+      '4xl': '2560px',  // QHD / 2K, monitores 32" (Samsung etc.)
+      '5xl': '3440px',  // UltraWide 34"
+      '6xl': '3840px',  // 4K / 60 polegadas
+    },
     extend: {
       colors: {
         // Paleta gótica principal

@@ -218,9 +218,9 @@ export default function ProductsCarousel({ products, title, showAll }: ProductCa
 
   return (
     <section className="py-14 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+      {/* Header — respeita padding lateral, mas o carrossel vai de ponta a ponta */}
+      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-16 2xl:px-20 mb-8">
+        <div className="flex items-center justify-between">
           <div>
             <h2 className="font-gothic text-3xl sm:text-4xl font-bold text-white">
               {title}
@@ -263,10 +263,10 @@ export default function ProductsCarousel({ products, title, showAll }: ProductCa
         </div>
       </div>
 
-      {/* Carrossel — vai de ponta a ponta da tela */}
+      {/* Carrossel — ocupa 100vw, de borda a borda, sem padding lateral */}
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden cursor-grab active:cursor-grabbing select-none"
+        className="relative w-screen left-1/2 -translate-x-1/2 overflow-hidden cursor-grab active:cursor-grabbing select-none"
         onMouseEnter={() => { isPaused.current = true }}
         onMouseLeave={() => { isPaused.current = false; isDragging.current = false }}
         onPointerDown={onPointerDown}
@@ -274,15 +274,21 @@ export default function ProductsCarousel({ products, title, showAll }: ProductCa
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        {/* Fade esquerda */}
-        <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, var(--dark-bg, #000) 0%, transparent 100%)' }} />
-        {/* Fade direita */}
-        <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, var(--dark-bg, #000) 0%, transparent 100%)' }} />
+        {/* Fade esquerda — funde com o fundo do site */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-20 sm:w-32 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to right, #0a0a0f 0%, transparent 100%)' }}
+        />
+        {/* Fade direita — funde com o fundo do site */}
+        <div
+          className="absolute right-0 top-0 bottom-0 w-20 sm:w-32 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to left, #0a0a0f 0%, transparent 100%)' }}
+        />
 
-        {/* Track */}
+        {/* Track — sem padding lateral para começar/terminar na borda */}
         <div
           ref={trackRef}
-          className="flex gap-5 w-max pb-2 pt-1 px-4"
+          className="flex gap-5 w-max pb-2 pt-1"
           style={{ willChange: 'transform' }}
         >
           {loopedProducts.map((product, i) => (

@@ -118,8 +118,8 @@ export default function FeaturedProducts({ products, title, showAll }: FeaturedP
   if (products.length === 0) return null
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <section className="py-16 site-container">
+      <div>
         {/* Header */}
         <div className="flex items-center justify-between mb-10">
           <div>
@@ -140,7 +140,7 @@ export default function FeaturedProducts({ products, title, showAll }: FeaturedP
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4 sm:gap-5">
           {products.map((product, i) => (
             <ProductCard key={product.id} product={product} index={i} />
           ))}

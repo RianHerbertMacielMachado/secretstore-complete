@@ -34,7 +34,7 @@ export default function CategoriasClient({ categories }: { categories: Category[
       {/* Hero */}
       <div className="relative py-16 px-4 sm:px-6 lg:px-8 border-b border-white/5 mb-12 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,0,127,0.08)_0%,_transparent_60%)]" />
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="site-container relative z-10">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -48,14 +48,14 @@ export default function CategoriasClient({ categories }: { categories: Category[
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="site-container">
         {categories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 gap-4">
             <Package size={48} className="text-white/10" />
             <p className="text-white/40 text-lg">Nenhuma categoria disponível</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-5 gap-4 sm:gap-5">
             {categories.map((cat, i) => (
               <motion.div
                 key={cat.id}

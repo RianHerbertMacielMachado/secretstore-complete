@@ -202,6 +202,45 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Container fluido responsivo — se adapta de mobile até 60" (3840px+)
+     Usa padding lateral proporcional para não ficar comprimido em telas grandes */
+  .site-container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;    /* 16px — mobile */
+    padding-right: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .site-container { padding-left: 1.5rem; padding-right: 1.5rem; }
+  }
+  @media (min-width: 1024px) {
+    .site-container { padding-left: 2.5rem; padding-right: 2.5rem; }
+  }
+  @media (min-width: 1280px) {
+    .site-container { padding-left: 3rem; padding-right: 3rem; }
+  }
+  @media (min-width: 1536px) {
+    .site-container { padding-left: 4rem; padding-right: 4rem; }
+  }
+  @media (min-width: 1920px) {
+    /* Full HD+: 27" monitors */
+    .site-container { padding-left: 5rem; padding-right: 5rem; }
+  }
+  @media (min-width: 2560px) {
+    /* QHD / 2K: Samsung 32" e similares */
+    .site-container { padding-left: 8rem; padding-right: 8rem; }
+  }
+  @media (min-width: 3440px) {
+    /* Ultrawide 34" */
+    .site-container { padding-left: 12rem; padding-right: 12rem; }
+  }
+  @media (min-width: 3840px) {
+    /* 4K / 60 polegadas */
+    .site-container { padding-left: 16rem; padding-right: 16rem; }
+  }
 }
 
 /* ==========================================
