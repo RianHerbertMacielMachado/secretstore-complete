@@ -52,6 +52,15 @@ export default async function StoreGroupLayout({ children }: { children: React.R
   const storeName = map.store_name || map.site_name || 'DarkShop'
   const discordUrl = storeSettings?.discordUrl ?? null
 
+  // Parse socialLinks
+  let socialLinks: { id: string; network: string; url: string; label?: string }[] = []
+  try {
+    const raw = (storeSettings as any)?.socialLinks
+    if (raw && typeof raw === 'string') {
+      socialLinks = JSON.parse(raw)
+    }
+  } catch {}
+
   // Dados do ticker
   const tickerEnabled = map.ticker_enabled === 'true'
   const tickerSpeed = map.ticker_speed || 'medium'
@@ -82,6 +91,7 @@ export default async function StoreGroupLayout({ children }: { children: React.R
       <StoreLayout
         storeName={storeName}
         discordUrl={discordUrl}
+        socialLinks={socialLinks}
         tickerItems={tickerItems}
         tickerEnabled={tickerEnabled}
         tickerSpeed={tickerSpeed}

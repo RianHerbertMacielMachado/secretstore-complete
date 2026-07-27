@@ -4,6 +4,13 @@ import TopTicker from '@/components/store/TopTicker'
 import CouponPopup from '@/components/store/CouponPopup'
 import type { PopupConfig } from '@/components/store/CouponPopup'
 
+interface SocialLink {
+  id: string
+  network: string
+  url: string
+  label?: string
+}
+
 interface TickerItem {
   id: string
   text: string
@@ -13,6 +20,7 @@ interface StoreLayoutProps {
   children: React.ReactNode
   storeName?: string
   discordUrl?: string | null
+  socialLinks?: SocialLink[]
   tickerItems?: TickerItem[]
   tickerEnabled?: boolean
   tickerSpeed?: string
@@ -24,6 +32,7 @@ export default function StoreLayout({
   children,
   storeName = 'DarkShop',
   discordUrl,
+  socialLinks = [],
   tickerItems = [],
   tickerEnabled = false,
   tickerSpeed = 'medium',
@@ -56,7 +65,7 @@ export default function StoreLayout({
         {children}
       </main>
 
-      <StoreFooter storeName={storeName} discordUrl={discordUrl} />
+      <StoreFooter storeName={storeName} discordUrl={discordUrl} socialLinks={socialLinks} />
 
       {/* Popup flutuante de cupom — fixo no canto inferior direito */}
       {popupConfig && <CouponPopup config={popupConfig} />}

@@ -32,16 +32,37 @@ export async function PUT(req: NextRequest) {
         ? Number(body.productsPerPage)
         : 15
 
+    // Validate socialLinks — must be a valid JSON array
+    let socialLinks = '[]'
+    if (body.socialLinks !== undefined) {
+      try {
+        const parsed = typeof body.socialLinks === 'string'
+          ? JSON.parse(body.socialLinks)
+          : body.socialLinks
+        if (Array.isArray(parsed)) {
+          socialLinks = JSON.stringify(parsed)
+        }
+      } catch {
+        socialLinks = '[]'
+      }
+    } else {
+      // Keep existing value if not provided
+      const existing = await prisma.storeSettings.findFirst({ select: { socialLinks: true } })
+      socialLinks = existing?.socialLinks ?? '[]'
+    }
+
     const settings = await prisma.storeSettings.upsert({
       where: { id: 'singleton' },
       update: {
         discordUrl: body.discordUrl ?? null,
         productsPerPage,
+        socialLinks,
       },
       create: {
         id: 'singleton',
         discordUrl: body.discordUrl ?? null,
         productsPerPage,
+        socialLinks,
       },
     })
     return NextResponse.json({ settings })

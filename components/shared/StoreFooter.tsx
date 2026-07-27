@@ -2,17 +2,89 @@
 
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { FaDiscord } from 'react-icons/fa'
+import { FaDiscord, FaInstagram, FaYoutube, FaTiktok, FaFacebook, FaPinterest, FaTelegram, FaWhatsapp, FaTwitch, FaLinkedin } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
+import { Share2 } from 'lucide-react'
+
+interface SocialLink {
+  id: string
+  network: string
+  url: string
+  label?: string
+}
 
 interface StoreFooterProps {
   storeName?: string
   discordUrl?: string | null
+  socialLinks?: SocialLink[]
 }
 
-export default function StoreFooter({ storeName = 'DarkShop', discordUrl }: StoreFooterProps) {
+// Map network key → icon + color
+const SOCIAL_ICON_MAP: Record<string, { icon: React.ReactNode; color: string }> = {
+  instagram: { icon: <FaInstagram size={18} />, color: '#E1306C' },
+  youtube:   { icon: <FaYoutube size={18} />,   color: '#FF0000' },
+  tiktok:    { icon: <FaTiktok size={18} />,    color: '#69C9D0' },
+  twitter:   { icon: <FaXTwitter size={18} />,  color: '#1DA1F2' },
+  discord:   { icon: <FaDiscord size={18} />,   color: '#5865F2' },
+  facebook:  { icon: <FaFacebook size={18} />,  color: '#1877F2' },
+  pinterest: { icon: <FaPinterest size={18} />, color: '#E60023' },
+  telegram:  { icon: <FaTelegram size={18} />,  color: '#229ED9' },
+  whatsapp:  { icon: <FaWhatsapp size={18} />,  color: '#25D366' },
+  twitch:    { icon: <FaTwitch size={18} />,    color: '#9146FF' },
+  linkedin:  { icon: <FaLinkedin size={18} />,  color: '#0A66C2' },
+}
+
+function SocialIcon({ link }: { link: SocialLink }) {
+  const meta = SOCIAL_ICON_MAP[link.network]
+  const icon = meta?.icon ?? <Share2 size={18} />
+  const color = meta?.color ?? '#ffffff'
+  const title = link.label || (link.network.charAt(0).toUpperCase() + link.network.slice(1))
+
+  return (
+    <a
+      href={link.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={title}
+      aria-label={title}
+      className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center transition-all group"
+      style={{
+        ['--hover-color' as string]: color,
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget
+        el.style.borderColor = color + '80'
+        el.style.background = color + '18'
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget
+        el.style.borderColor = ''
+        el.style.background = ''
+      }}
+    >
+      <span className="text-white/40 transition-colors group-hover:opacity-100" style={{}}>
+        {icon}
+      </span>
+    </a>
+  )
+}
+
+export default function StoreFooter({ storeName = 'DarkShop', discordUrl, socialLinks = [] }: StoreFooterProps) {
   const mid = Math.ceil(storeName.length / 2)
   const namePart1 = storeName.slice(0, mid).toUpperCase()
   const namePart2 = storeName.slice(mid).toUpperCase()
+
+  // Build final icon list: custom social links + discord (legacy, appended if not already in socialLinks)
+  const hasDiscordInLinks = socialLinks.some((l) => l.network === 'discord')
+  const legacyDiscord: SocialLink | null =
+    discordUrl && !hasDiscordInLinks
+      ? { id: '__discord_legacy__', network: 'discord', url: discordUrl }
+      : null
+
+  const allLinks: SocialLink[] = [
+    ...socialLinks,
+    ...(legacyDiscord ? [legacyDiscord] : []),
+  ]
 
   return (
     <footer className="border-t border-white/10 bg-black/80 py-12 mt-16">
@@ -30,29 +102,24 @@ export default function StoreFooter({ storeName = 'DarkShop', discordUrl }: Stor
               Sua loja de produtos digitais premium.
               Qualidade, estilo e entrega imediata.
             </p>
-            <div className="flex gap-3 mt-6">
+
+            {/* Social icons row */}
+            <div className="flex flex-wrap gap-2 mt-6">
+              {/* Static decorative icons (original) */}
               <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-white/40 hover:text-neon-pink hover:border-neon-pink/50 cursor-pointer transition-all">
                 ♥
               </div>
               <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-white/40 hover:text-neon-pink hover:border-neon-pink/50 cursor-pointer transition-all">
                 ✦
               </div>
-              {/* Discord Icon — sempre visível, clicável se discordUrl preenchido */}
-              {discordUrl ? (
-                <a
-                  href={discordUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center transition-all group hover:border-[#5865F2]/60"
-                  title="Entrar no Discord"
-                  aria-label="Discord da loja"
-                >
-                  <FaDiscord
-                    size={20}
-                    className="text-white/40 group-hover:text-[#5865F2] transition-colors"
-                  />
-                </a>
-              ) : (
+
+              {/* Dynamic social links */}
+              {allLinks.map((link) => (
+                <SocialIcon key={link.id} link={link} />
+              ))}
+
+              {/* Discord legacy fallback — show inactive icon if no links configured at all */}
+              {allLinks.length === 0 && (
                 <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-white/40 hover:text-[#5865F2] hover:border-[#5865F2]/50 cursor-pointer transition-all">
                   <FaDiscord size={20} />
                 </div>
