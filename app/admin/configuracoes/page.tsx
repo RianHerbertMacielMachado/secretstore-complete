@@ -24,6 +24,15 @@ export default async function AdminConfiguracoesPage() {
 
   const webhookBase = process.env.NEXTAUTH_URL || 'https://seudominio.com'
 
+  // Parse socialLinks stored as JSON string
+  let socialLinks: { id: string; network: string; url: string; label?: string }[] = []
+  try {
+    const raw = (storeSettings as any)?.socialLinks
+    if (raw && typeof raw === 'string') {
+      socialLinks = JSON.parse(raw)
+    }
+  } catch {}
+
   return (
     <AdminConfiguracoesClient
       configMap={configMap}
@@ -31,6 +40,7 @@ export default async function AdminConfiguracoesPage() {
       webhookBase={webhookBase}
       discordUrl={storeSettings?.discordUrl ?? null}
       productsPerPage={storeSettings?.productsPerPage ?? 15}
+      socialLinks={socialLinks}
     />
   )
 }
