@@ -612,7 +612,7 @@ export default function AdminConfiguracoesClient({
 
         {/* Lista de redes */}
         {socialLinks.length === 0 ? (
-          <div className="text-center py-10 border border-dashed border-white/10 rounded-xl">
+          <div className="text-center py-10 border border-dashed border-white/10 rounded-xl mb-5">
             <Share2 size={28} className="text-white/20 mx-auto mb-3" />
             <p className="text-white/30 text-sm">Nenhuma rede social adicionada ainda</p>
             <button
@@ -682,16 +682,14 @@ export default function AdminConfiguracoesClient({
           </div>
         )}
 
-        {socialLinks.length > 0 && (
-          <button
-            onClick={() => saveSocialLinks(socialLinks)}
-            disabled={isSavingSocial}
-            className="btn-neon-solid px-6 py-2.5 rounded-xl flex items-center gap-2 text-sm disabled:opacity-50"
-          >
-            <Save size={16} />
-            {isSavingSocial ? 'Salvando...' : 'Salvar Redes Sociais'}
-          </button>
-        )}
+        <button
+          onClick={() => saveSocialLinks(socialLinks)}
+          disabled={isSavingSocial}
+          className="btn-neon-solid px-6 py-2.5 rounded-xl flex items-center gap-2 text-sm disabled:opacity-50"
+        >
+          <Save size={16} />
+          {isSavingSocial ? 'Salvando...' : 'Salvar Redes Sociais'}
+        </button>
       </div>
 
       {/* Status das Integrações */}
