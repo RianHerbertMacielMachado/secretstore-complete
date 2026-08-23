@@ -158,20 +158,21 @@ model OrderItem {
 }
 
 model Coupon {
-  id               String    @id @default(cuid())
-  code             String    @unique
-  discountType     String
-  discountValue    Float
-  scope            String    @default("ALL")
-  categoryIds      String    @default("[]")
-  productIds       String    @default("[]")
-  expiresAt        DateTime?
-  totalUsageLimit  Int?
-  perCustomerLimit Int       @default(1)
-  usageCount       Int       @default(0)
-  isActive         Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  code              String    @unique
+  discountType      String
+  discountValue     Float
+  scope             String    @default("ALL")
+  categoryIds       String    @default("[]")
+  subCategoryIds    String    @default("[]")
+  productIds        String    @default("[]")
+  expiresAt         DateTime?
+  totalUsageLimit   Int?
+  perCustomerLimit  Int       @default(1)
+  usageCount        Int       @default(0)
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model SiteConfig {

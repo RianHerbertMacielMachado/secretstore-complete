@@ -17,13 +17,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Carrinho vazio' }, { status: 400 })
     }
 
-    // Calcular total
+    // Build order items with full product data (including subCategory & category)
     let totalAmount = 0
     let discountAmount = 0
 
     const productIds = items.map((i: any) => i.id)
     const products = await prisma.product.findMany({
       where: { id: { in: productIds }, status: 'ACTIVE' },
+      include: {
+        subCategory: {
+          select: {
+            id: true,
+            categoryId: true,
+          },
+        },
+      },
     })
 
     const orderItems = items.map((item: any) => {
@@ -34,7 +42,7 @@ export async function POST(req: NextRequest) {
       return { productId: item.id, quantity: item.quantity, price }
     })
 
-    // Aplicar cupom
+    // Apply coupon
     if (couponCode) {
       const coupon = await prisma.coupon.findFirst({
         where: {
@@ -45,21 +53,55 @@ export async function POST(req: NextRequest) {
       })
 
       if (coupon) {
-        if (coupon.discountType === 'PERCENTAGE') {
-          discountAmount = totalAmount * (coupon.discountValue / 100)
+        const couponCategoryIds: string[] = JSON.parse(coupon.categoryIds || '[]')
+        const couponSubCategoryIds: string[] = JSON.parse(coupon.subCategoryIds || '[]')
+        const couponProductIds: string[] = JSON.parse(coupon.productIds || '[]')
+
+        // Calculate eligible total based on coupon scope
+        let eligibleTotal = 0
+
+        if (coupon.scope === 'ALL') {
+          eligibleTotal = totalAmount
         } else {
-          discountAmount = Math.min(coupon.discountValue, totalAmount)
+          // Sum only eligible products
+          for (const item of items) {
+            const product = products.find((p) => p.id === item.id)
+            if (!product) continue
+
+            const price = product.salePrice ?? product.price
+            const itemTotal = price * item.quantity
+
+            // Check if product matches coupon scope
+            const matchesProduct = couponProductIds.length > 0 && couponProductIds.includes(product.id)
+            const matchesSubCategory =
+              couponSubCategoryIds.length > 0 && couponSubCategoryIds.includes(product.subCategoryId)
+            const matchesCategory =
+              couponCategoryIds.length > 0 && couponCategoryIds.includes(product.subCategory.categoryId)
+
+            if (matchesProduct || matchesSubCategory || matchesCategory) {
+              eligibleTotal += itemTotal
+            }
+          }
         }
-        await prisma.coupon.update({
-          where: { id: coupon.id },
-          data: { usageCount: { increment: 1 } },
-        })
+
+        if (eligibleTotal > 0) {
+          if (coupon.discountType === 'PERCENTAGE') {
+            discountAmount = eligibleTotal * (coupon.discountValue / 100)
+          } else {
+            discountAmount = Math.min(coupon.discountValue, eligibleTotal)
+          }
+
+          await prisma.coupon.update({
+            where: { id: coupon.id },
+            data: { usageCount: { increment: 1 } },
+          })
+        }
       }
     }
 
     const finalAmount = Math.max(0, totalAmount - discountAmount)
 
-    // Criar pedido
+    // Create order
     const order = await prisma.order.create({
       data: {
         userId,
