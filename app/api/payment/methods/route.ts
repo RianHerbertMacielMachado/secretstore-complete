@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
 
+// force-dynamic garante que process.env é lido em cada request (nunca cacheado no build)
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/payment/methods
  *
  * Retorna quais métodos de pagamento estão configurados via variáveis de ambiente.
  * Não expõe nenhum token — apenas um booleano por método.
  *
- * PIX  → requer MP_ACCESS_TOKEN
+ * PIX    → requer MP_ACCESS_TOKEN
  * PayPal → requer PAYPAL_CLIENT_ID + PAYPAL_CLIENT_SECRET
  * PicPay → requer PICPAY_TOKEN + PICPAY_SELLER_TOKEN
  */
