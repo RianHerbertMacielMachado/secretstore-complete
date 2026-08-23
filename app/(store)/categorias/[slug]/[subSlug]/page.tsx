@@ -11,6 +11,11 @@ export const dynamicParams = true
 // das queries duplicadas mantendo os dados próximos do tempo real.
 export const revalidate = 120
 
+// Helper: remove null bytes que causam "Failed to convert rust String into napi string"
+function sanitize(s: string | null | undefined): string {
+  return (s ?? '').replace(/\u0000/g, '')
+}
+
 export async function generateStaticParams() {
   try {
     const subCategories = await prisma.subCategory.findMany({
@@ -24,55 +29,64 @@ export async function generateStaticParams() {
 }
 
 export default async function SubCategoriaSlugPage({ params }: Props) {
-  const [subCategory, allCategories, storeSettings] = await Promise.all([
-    prisma.subCategory.findUnique({
-      where: { slug: params.subSlug },
-      include: {
-        category: true,
-        products: {
-          where: { status: 'ACTIVE' },
-          include: {
-            subCategory: {
-              include: { category: true },
+  try {
+    const [subCategory, allCategories, storeSettings] = await Promise.all([
+      prisma.subCategory.findUnique({
+        where: { slug: params.subSlug },
+        include: {
+          category: true,
+          products: {
+            where: { status: 'ACTIVE' },
+            include: {
+              subCategory: {
+                include: { category: true },
+              },
+              productImages: { orderBy: { order: 'asc' } },
             },
-            productImages: { orderBy: { order: 'asc' } },
+            orderBy: { createdAt: 'desc' },
           },
-          orderBy: { createdAt: 'desc' },
         },
-      },
-    }),
-    prisma.category.findMany({
-      where: { isVisible: true },
-      orderBy: { sortOrder: 'asc' },
-    }),
-    prisma.storeSettings.findFirst(),
-  ])
+      }),
+      prisma.category.findMany({
+        where: { isVisible: true },
+        orderBy: { sortOrder: 'asc' },
+      }),
+      prisma.storeSettings.findFirst(),
+    ])
 
-  if (!subCategory || !subCategory.isVisible) notFound()
+    if (!subCategory || !subCategory.isVisible) notFound()
 
-  // Ensure the subCategory belongs to the given category slug
-  if (subCategory.category.slug !== params.slug) notFound()
+    // Ensure the subCategory belongs to the given category slug
+    if (subCategory.category.slug !== params.slug) notFound()
 
-  const productsPerPage = storeSettings?.productsPerPage ?? 15
+    const productsPerPage = storeSettings?.productsPerPage ?? 15
 
-  return (
-    <ProdutosClient
-      products={subCategory.products.map((p) => ({
-        ...p,
-        images: p.productImages.map((img) => img.url),
-        category: p.subCategory.category,
-        subCategoryId: p.subCategoryId,
-        categoryId: p.subCategory.categoryId,
-      }))}
-      categories={allCategories}
-      activeCategory={params.slug}
-      searchQuery=""
-      sortOrder="recentes"
-      subCategoryName={subCategory.name}
-      categoryName={subCategory.category.name}
-      categorySlug={params.slug}
-      productsPerPage={productsPerPage}
-      subCategoryBannerImage={subCategory.bannerImage ?? null}
-    />
-  )
+    return (
+      <ProdutosClient
+        products={subCategory.products.map((p) => ({
+          ...p,
+          name: sanitize(p.name),
+          slug: sanitize(p.slug),
+          description: sanitize(p.description),
+          mainImage: sanitize(p.mainImage),
+          images: p.productImages.map((img) => sanitize(img.url)),
+          category: p.subCategory.category,
+          subCategoryId: p.subCategoryId,
+          categoryId: p.subCategory.categoryId,
+        }))}
+        categories={allCategories}
+        activeCategory={params.slug}
+        searchQuery=""
+        sortOrder="recentes"
+        subCategoryName={subCategory.name}
+        categoryName={subCategory.category.name}
+        categorySlug={params.slug}
+        productsPerPage={productsPerPage}
+        subCategoryBannerImage={subCategory.bannerImage ?? null}
+      />
+    )
+  } catch (err: any) {
+    console.error('[SubCategoriaPage] Erro ao buscar produtos:', err?.message ?? err)
+    notFound()
+  }
 }
