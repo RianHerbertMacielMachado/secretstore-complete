@@ -64,5 +64,9 @@ USER nextjs
 
 EXPOSE 3000
 
-# Aplica migrations e inicia o servidor
-CMD node node_modules/prisma/build/index.js migrate deploy && HOSTNAME="0.0.0.0" node server.js
+# Resolve qualquer migration "failed" que possa estar travada no banco (P3009),
+# depois aplica as migrations pendentes e inicia o servidor.
+# O --resolve rolled-back é idempotente: não faz nada se não houver migration failed.
+CMD node node_modules/prisma/build/index.js migrate resolve --rolled-back 20260823170000_sanitize_null_bytes 2>/dev/null || true && \
+    node node_modules/prisma/build/index.js migrate deploy && \
+    HOSTNAME="0.0.0.0" node server.js
