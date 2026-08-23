@@ -3,71 +3,82 @@ import { prisma } from '@/lib/prisma'
 import LayoutThemeApplier from '@/components/layouts/LayoutThemeApplier'
 import StoreLayout from '@/components/layouts/StoreLayout'
 
-// ISR: regenera a cada 60 s; elimina force-dynamic em todas as páginas da loja
+// ISR: regenera a cada 60 s. As queries abaixo têm try/catch com fallback
+// para que o build sem DATABASE_URL (Railway CI) não falhe.
 export const revalidate = 60
 
-// ─── Metadados gerados a partir do MESMO mapa já carregado abaixo ────────────
-// Usamos uma função separada porque Next.js exige exportação nomeada,
-// mas evitamos uma segunda query ao banco reutilizando as mesmas chaves.
 export async function generateMetadata(): Promise<Metadata> {
-  const configs = await prisma.siteConfig.findMany({
-    where: { key: { in: ['store_name', 'site_name', 'site_description'] } },
-    select: { key: true, value: true },
-  })
-  const map = Object.fromEntries(configs.map((c) => [c.key, c.value]))
-  const name = map.store_name || map.site_name || 'DarkShop'
-  const desc =
-    map.site_description || 'Sua loja de produtos digitais com estética gótica e e-girl'
-
-  return {
-    title: `${name} — Produtos Digitais Premium`,
-    description: desc,
+  try {
+    const configs = await prisma.siteConfig.findMany({
+      where: { key: { in: ['store_name', 'site_name', 'site_description'] } },
+      select: { key: true, value: true },
+    })
+    const map = Object.fromEntries(configs.map((c) => [c.key, c.value]))
+    const name = map.store_name || map.site_name || 'DarkShop'
+    const desc =
+      map.site_description || 'Sua loja de produtos digitais com estética gótica e e-girl'
+    return {
+      title: `${name} — Produtos Digitais Premium`,
+      description: desc,
+    }
+  } catch {
+    return {
+      title: 'DarkShop — Produtos Digitais Premium',
+      description: 'Sua loja de produtos digitais com estética gótica e e-girl',
+    }
   }
 }
 
 export default async function StoreGroupLayout({ children }: { children: React.ReactNode }) {
-  // Única rodada de queries para todo o layout — Next.js deduplica chamadas
-  // idênticas dentro do mesmo render graças ao Request Memoization.
-  const [configs, storeSettings, tickerItems] = await Promise.all([
-    prisma.siteConfig.findMany({
-      where: {
-        key: {
-          in: [
-            'active_layout',
-            'store_name',
-            'site_name',
-            'site_description',
-            // Ticker
-            'ticker_enabled',
-            'ticker_speed',
-            'ticker_color',
-            // Popup de cupom
-            'popup_enabled',
-            'popup_discount',
-            'popup_code',
-            'popup_expiry_hours',
-            'popup_cta_text',
-            'popup_cta_link',
-            'popup_delay_seconds',
-            'popup_design',
-            'popup_color_accent',
-            'popup_color_text',
-            'popup_color_bg',
-            'popup_color_timer_bg',
-          ],
+  // Valores padrão caso DATABASE_URL não esteja disponível no build
+  let configs: { key: string; value: string }[] = []
+  let storeSettings: { discordUrl: string | null; socialLinks: any } | null = null
+  let tickerItems: { id: string; text: string }[] = []
+
+  try {
+    ;[configs, storeSettings, tickerItems] = await Promise.all([
+      prisma.siteConfig.findMany({
+        where: {
+          key: {
+            in: [
+              'active_layout',
+              'store_name',
+              'site_name',
+              'site_description',
+              // Ticker
+              'ticker_enabled',
+              'ticker_speed',
+              'ticker_color',
+              // Popup de cupom
+              'popup_enabled',
+              'popup_discount',
+              'popup_code',
+              'popup_expiry_hours',
+              'popup_cta_text',
+              'popup_cta_link',
+              'popup_delay_seconds',
+              'popup_design',
+              'popup_color_accent',
+              'popup_color_text',
+              'popup_color_bg',
+              'popup_color_timer_bg',
+            ],
+          },
         },
-      },
-      select: { key: true, value: true },
-    }),
-    prisma.storeSettings.findFirst({
-      select: { discordUrl: true, socialLinks: true },
-    }),
-    prisma.tickerItem.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: 'asc' },
-      select: { id: true, text: true },
-    }),
-  ])
+        select: { key: true, value: true },
+      }),
+      prisma.storeSettings.findFirst({
+        select: { discordUrl: true, socialLinks: true },
+      }),
+      prisma.tickerItem.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: 'asc' },
+        select: { id: true, text: true },
+      }),
+    ])
+  } catch {
+    // Build sem DATABASE_URL — renderiza com valores padrão
+  }
 
   const map = Object.fromEntries(configs.map((c) => [c.key, c.value]))
 
