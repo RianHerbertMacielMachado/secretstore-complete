@@ -56,6 +56,10 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
+# Copia o entrypoint que desbloqueia migrations failed e inicia o servidor
+COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
+
 # Copia o output standalone do Next.js
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
@@ -64,9 +68,5 @@ USER nextjs
 
 EXPOSE 3000
 
-# Resolve qualquer migration "failed" que possa estar travada no banco (P3009),
-# depois aplica as migrations pendentes e inicia o servidor.
-# O --resolve rolled-back é idempotente: não faz nada se não houver migration failed.
-CMD node node_modules/prisma/build/index.js migrate resolve --rolled-back 20260823170000_sanitize_null_bytes 2>/dev/null || true && \
-    node node_modules/prisma/build/index.js migrate deploy && \
-    HOSTNAME="0.0.0.0" node server.js
+# Usa script shell dedicado — garante execução sequencial correta
+CMD ["sh", "./entrypoint.sh"]
