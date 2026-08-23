@@ -8,6 +8,8 @@ interface Props {
 }
 
 export const dynamicParams = true
+// ISR: lista de subcategorias muda pouco — 2 min de cache é seguro.
+export const revalidate = 120
 
 export async function generateStaticParams() {
   try {

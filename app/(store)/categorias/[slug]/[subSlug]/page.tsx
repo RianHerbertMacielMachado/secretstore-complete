@@ -7,6 +7,9 @@ interface Props {
 }
 
 export const dynamicParams = true
+// ISR: lista de produtos por subcategoria — 2 min de cache elimina a maioria
+// das queries duplicadas mantendo os dados próximos do tempo real.
+export const revalidate = 120
 
 export async function generateStaticParams() {
   try {

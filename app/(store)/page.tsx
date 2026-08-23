@@ -2,7 +2,9 @@ import { prisma } from '@/lib/prisma'
 import HeroSection from '@/components/store/HeroSection'
 import HeroCarousel from '@/components/store/HeroCarousel'
 
-export const dynamic = 'force-dynamic'
+// ISR: hero e carrossel raramente mudam — cachear por 60 s elimina queries
+// repetidas a cada navegação sem impactar a experiência do usuário.
+export const revalidate = 60
 
 export default async function HomePage() {
   const [carouselItems, heroBgs, configs] = await Promise.all([

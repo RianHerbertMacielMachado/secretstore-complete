@@ -8,6 +8,9 @@ interface Props {
 }
 
 export const dynamicParams = true
+// ISR: páginas de produto são estáticas na maior parte do tempo;
+// regenerar a cada 5 min é suficiente para refletir atualizações de preço/estoque.
+export const revalidate = 300
 
 export async function generateStaticParams() {
   try {
