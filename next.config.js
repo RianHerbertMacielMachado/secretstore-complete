@@ -9,6 +9,7 @@ const nextConfig = {
       '@prisma/client',
       'prisma',
       'nodemailer',
+      'cloudinary',
     ],
   },
 
