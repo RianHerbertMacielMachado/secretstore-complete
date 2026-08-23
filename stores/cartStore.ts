@@ -7,20 +7,38 @@ export interface CartItem {
   price: number
   image: string
   quantity: number
+  /** ID da subcategoria à qual o produto pertence (usado para escopo de cupom) */
+  subCategoryId: string
+  /** ID da categoria pai (usado para escopo de cupom) */
+  categoryId: string
+}
+
+export interface CouponState {
+  code: string
+  discount: number
+  type: 'PERCENTAGE' | 'FIXED'
+  /** 'ALL' = loja inteira, 'SPECIFIC' = restrito por ids abaixo */
+  scope: 'ALL' | 'SPECIFIC'
+  categoryIds: string[]
+  subCategoryIds: string[]
+  productIds: string[]
 }
 
 interface CartStore {
   items: CartItem[]
-  coupon: { code: string; discount: number; type: 'PERCENTAGE' | 'FIXED' } | null
-  
+  coupon: CouponState | null
+
   addItem: (item: CartItem) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
-  applyCoupon: (coupon: { code: string; discount: number; type: 'PERCENTAGE' | 'FIXED' }) => void
+  applyCoupon: (coupon: CouponState) => void
   removeCoupon: () => void
-  
+
   getSubtotal: () => number
+  /** Retorna o total elegível do cupom (somente produtos válidos para o escopo) */
+  getEligibleTotal: () => number
+  /** Retorna o valor do desconto calculado APENAS sobre os itens elegíveis */
   getDiscount: () => number
   getTotal: () => number
 }
@@ -37,9 +55,7 @@ export const useCartStore = create<CartStore>()(
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.id === item.id
-                  ? { ...i, quantity: i.quantity + item.quantity }
-                  : i
+                i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
               ),
             }
           }
@@ -70,14 +86,36 @@ export const useCartStore = create<CartStore>()(
         return get().items.reduce((acc, i) => acc + i.price * i.quantity, 0)
       },
 
+      getEligibleTotal: () => {
+        const { coupon, items } = get()
+        if (!coupon) return get().getSubtotal()
+        if (coupon.scope === 'ALL') return get().getSubtotal()
+
+        // Scope SPECIFIC — soma apenas os itens elegíveis
+        return items.reduce((acc, item) => {
+          const matchesProduct =
+            coupon.productIds.length > 0 && coupon.productIds.includes(item.id)
+          const matchesSubCategory =
+            coupon.subCategoryIds.length > 0 && coupon.subCategoryIds.includes(item.subCategoryId)
+          const matchesCategory =
+            coupon.categoryIds.length > 0 && coupon.categoryIds.includes(item.categoryId)
+
+          if (matchesProduct || matchesSubCategory || matchesCategory) {
+            return acc + item.price * item.quantity
+          }
+          return acc
+        }, 0)
+      },
+
       getDiscount: () => {
-        const { coupon, getSubtotal } = get()
+        const { coupon, getEligibleTotal } = get()
         if (!coupon) return 0
-        const subtotal = getSubtotal()
+        const eligible = getEligibleTotal()
+        if (eligible <= 0) return 0
         if (coupon.type === 'PERCENTAGE') {
-          return subtotal * (coupon.discount / 100)
+          return eligible * (coupon.discount / 100)
         }
-        return Math.min(coupon.discount, subtotal)
+        return Math.min(coupon.discount, eligible)
       },
 
       getTotal: () => {

@@ -15,6 +15,8 @@ interface Product {
   salePrice: number | null
   mainImage: string
   featured?: boolean
+  subCategoryId: string
+  categoryId: string
   category: { name: string }
 }
 
@@ -36,6 +38,8 @@ function CarouselCard({ product }: { product: Product }) {
       price: product.salePrice ?? product.price,
       image: product.mainImage,
       quantity: 1,
+      subCategoryId: product.subCategoryId,
+      categoryId: product.categoryId,
     })
     toast.success(`${product.name} adicionado ao carrinho!`)
   }

@@ -13,6 +13,8 @@ interface Product {
   price: number
   salePrice: number | null
   mainImage: string
+  subCategoryId: string
+  categoryId: string
   category: { name: string }
 }
 
@@ -33,6 +35,8 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
       price: product.salePrice ?? product.price,
       image: product.mainImage,
       quantity: 1,
+      subCategoryId: product.subCategoryId,
+      categoryId: product.categoryId,
     })
     toast.success(`${product.name} adicionado ao carrinho!`)
   }

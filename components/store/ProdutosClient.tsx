@@ -19,6 +19,8 @@ interface Product {
   mainImage: string
   featured: boolean
   status: string
+  subCategoryId: string
+  categoryId: string
   category: { id: string; name: string; slug: string }
 }
 
@@ -50,7 +52,7 @@ function ProductCard({ product, index, view }: { product: Product; index: number
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
-    addItem({ id: product.id, name: product.name, price: currentPrice, image: product.mainImage, quantity: 1 })
+    addItem({ id: product.id, name: product.name, price: currentPrice, image: product.mainImage, quantity: 1, subCategoryId: product.subCategoryId, categoryId: product.categoryId })
     toast.success(`${product.name} adicionado!`)
   }
 

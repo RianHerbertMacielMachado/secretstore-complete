@@ -58,6 +58,8 @@ export default async function SubCategoriaSlugPage({ params }: Props) {
         ...p,
         images: p.productImages.map((img) => img.url),
         category: p.subCategory.category,
+        subCategoryId: p.subCategoryId,
+        categoryId: p.subCategory.categoryId,
       }))}
       categories={allCategories}
       activeCategory={params.slug}

@@ -2,14 +2,14 @@
 
 import { useCartStore } from '@/stores/cartStore'
 import { formatCurrency } from '@/lib/utils/helpers'
-import { Trash2, ShoppingBag, Tag, ArrowRight } from 'lucide-react'
+import { Trash2, ShoppingBag, Tag, ArrowRight, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function CarrinhoPage() {
-  const { items, removeItem, updateQuantity, coupon, applyCoupon, removeCoupon, getSubtotal, getDiscount, getTotal } = useCartStore()
+  const { items, removeItem, updateQuantity, coupon, applyCoupon, removeCoupon, getSubtotal, getDiscount, getTotal, getEligibleTotal } = useCartStore()
   const [couponCode, setCouponCode] = useState('')
   const [isApplying, setIsApplying] = useState(false)
 
@@ -20,7 +20,15 @@ export default function CarrinhoPage() {
       const res = await fetch(`/api/coupons/validate?code=${couponCode.toUpperCase()}`)
       const data = await res.json()
       if (!res.ok || !data.valid) throw new Error(data.error || 'Cupom inválido')
-      applyCoupon({ code: couponCode.toUpperCase(), discount: data.discount, type: data.discountType })
+      applyCoupon({
+        code: couponCode.toUpperCase(),
+        discount: data.discount,
+        type: data.discountType,
+        scope: data.scope ?? 'ALL',
+        categoryIds: data.categoryIds ?? [],
+        subCategoryIds: data.subCategoryIds ?? [],
+        productIds: data.productIds ?? [],
+      })
       toast.success(`Cupom aplicado! ${data.discountType === 'PERCENTAGE' ? data.discount + '% de desconto' : formatCurrency(data.discount) + ' de desconto'}`)
       setCouponCode('')
     } catch (err: any) {
@@ -33,6 +41,9 @@ export default function CarrinhoPage() {
   const subtotal = getSubtotal()
   const discount = getDiscount()
   const total = getTotal()
+  const eligibleTotal = getEligibleTotal()
+  const couponIsRestricted = coupon && coupon.scope === 'SPECIFIC'
+  const noEligibleItems = couponIsRestricted && eligibleTotal === 0
 
   return (
     <>
@@ -90,14 +101,33 @@ export default function CarrinhoPage() {
                   <Tag size={16} className="text-neon-pink" /> Cupom de Desconto
                 </h3>
                 {coupon ? (
-                  <div className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                    <div>
-                      <p className="text-green-400 font-mono text-sm font-bold">{coupon.code}</p>
-                      <p className="text-green-400/60 text-xs">
-                        {coupon.type === 'PERCENTAGE' ? `${coupon.discount}% off` : `${formatCurrency(coupon.discount)} off`}
-                      </p>
+                  <div className="space-y-2">
+                    <div className={`flex items-center justify-between p-3 rounded-lg border ${
+                      noEligibleItems
+                        ? 'bg-yellow-500/10 border-yellow-500/20'
+                        : 'bg-green-500/10 border-green-500/20'
+                    }`}>
+                      <div>
+                        <p className={`font-mono text-sm font-bold ${noEligibleItems ? 'text-yellow-400' : 'text-green-400'}`}>
+                          {coupon.code}
+                        </p>
+                        <p className={`text-xs ${noEligibleItems ? 'text-yellow-400/60' : 'text-green-400/60'}`}>
+                          {coupon.type === 'PERCENTAGE' ? `${coupon.discount}% off` : `${formatCurrency(coupon.discount)} off`}
+                          {couponIsRestricted && !noEligibleItems && (
+                            <span className="ml-1">(aplicado em {formatCurrency(eligibleTotal)})</span>
+                          )}
+                        </p>
+                      </div>
+                      <button onClick={removeCoupon} className="text-white/30 hover:text-red-400 transition-colors">✕</button>
                     </div>
-                    <button onClick={removeCoupon} className="text-white/30 hover:text-red-400 transition-colors">✕</button>
+                    {noEligibleItems && (
+                      <div className="flex items-start gap-2 p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
+                        <AlertCircle size={14} className="text-yellow-400 mt-0.5 shrink-0" />
+                        <p className="text-xs text-yellow-400/80">
+                          Nenhum produto do carrinho é elegível para este cupom. O desconto não será aplicado.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex gap-2">

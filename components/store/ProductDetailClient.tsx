@@ -49,6 +49,8 @@ export default function ProductDetailClient({
       price: currentPrice,
       image: product.mainImage,
       quantity: 1,
+      subCategoryId: product.subCategory.id,
+      categoryId: product.subCategory.category.id,
     })
     toast.success(`${product.name} adicionado ao carrinho!`)
   }

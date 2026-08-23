@@ -59,6 +59,8 @@ export default async function ProdutosPage({ searchParams }: Props) {
         ...p,
         images: p.productImages.map((img) => img.url),
         category: p.subCategory.category,
+        subCategoryId: p.subCategoryId,
+        categoryId: p.subCategory.categoryId,
       }))}
       categories={categories}
       activeCategory={categoria || ''}
