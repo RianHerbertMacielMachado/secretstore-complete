@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import CategoriasClient from '@/components/store/CategoriasClient'
 
-export const dynamic = 'force-dynamic'
+// Revalida a cada 120 segundos — lista de categorias muda raramente
+export const revalidate = 120
 
 export const metadata = {
   title: 'Categorias | SecretStore',
@@ -9,29 +10,34 @@ export const metadata = {
 }
 
 export default async function CategoriasPage() {
-  const categories = await prisma.category.findMany({
-    where: { isVisible: true },
-    include: {
-      subCategories: {
-        where: { isVisible: true },
-        include: {
-          _count: {
-            select: { products: { where: { status: 'ACTIVE' } } },
-          },
-        },
-        orderBy: { sortOrder: 'asc' },
-      },
-    },
-    orderBy: { sortOrder: 'asc' },
-  })
+  let categoriesWithCount: any[] = []
 
-  // Compute product count per category (sum of all subcategories)
-  const categoriesWithCount = categories.map((cat) => ({
-    ...cat,
-    _count: {
-      products: cat.subCategories.reduce((sum, sub) => sum + sub._count.products, 0),
-    },
-  }))
+  try {
+    const categories = await prisma.category.findMany({
+      where: { isVisible: true },
+      include: {
+        subCategories: {
+          where: { isVisible: true },
+          include: {
+            _count: {
+              select: { products: { where: { status: 'ACTIVE' } } },
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+      orderBy: { sortOrder: 'asc' },
+    })
+
+    categoriesWithCount = categories.map((cat) => ({
+      ...cat,
+      _count: {
+        products: cat.subCategories.reduce((sum, sub) => sum + sub._count.products, 0),
+      },
+    }))
+  } catch (err: any) {
+    console.error('[CategoriasPage] erro Prisma:', err?.message ?? err)
+  }
 
   return <CategoriasClient categories={categoriesWithCount} />
 }

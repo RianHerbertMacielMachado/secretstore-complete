@@ -16,7 +16,7 @@ export default function FloatingHearts() {
 
   useEffect(() => {
     const emojis = ['♥', '✝', '♦', '✧', '♥']
-    const newHearts = Array.from({ length: 12 }, (_, i) => ({
+    const newHearts = Array.from({ length: 6 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       size: Math.random() * 16 + 8,

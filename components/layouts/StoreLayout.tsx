@@ -3,6 +3,7 @@ import StoreFooter from '@/components/shared/StoreFooter'
 import TopTicker from '@/components/store/TopTicker'
 import CouponPopup from '@/components/store/CouponPopup'
 import type { PopupConfig } from '@/components/store/CouponPopup'
+import FloatingHearts from '@/components/shared/FloatingHearts'
 
 interface SocialLink {
   id: string
@@ -45,6 +46,7 @@ export default function StoreLayout({
 
   return (
     <div className="min-h-screen bg-graffiti flex flex-col">
+      <FloatingHearts />
       {/* Faixa de avisos acima do navbar */}
       {showTicker && (
         <TopTicker

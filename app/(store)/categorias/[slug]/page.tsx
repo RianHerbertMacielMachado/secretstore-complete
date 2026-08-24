@@ -1,12 +1,13 @@
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
-import ProdutosClient from '@/components/store/ProdutosClient'
 import SubCategoriasClient from '@/components/store/SubCategoriasClient'
 
 interface Props {
   params: { slug: string }
 }
 
+// Revalida a cada 120 segundos — subcategorias mudam raramente
+export const revalidate = 120
 export const dynamicParams = true
 
 export async function generateStaticParams() {
@@ -22,33 +23,43 @@ export async function generateStaticParams() {
 }
 
 export default async function CategoriaSlugPage({ params }: Props) {
-  const category = await prisma.category.findUnique({
-    where: { slug: params.slug },
-    include: {
-      subCategories: {
-        where: { isVisible: true },
-        include: {
-          _count: { select: { products: { where: { status: 'ACTIVE' } } } },
+  try {
+    const category = await prisma.category.findUnique({
+      where: { slug: params.slug },
+      include: {
+        subCategories: {
+          where: { isVisible: true },
+          include: {
+            _count: { select: { products: { where: { status: 'ACTIVE' } } } },
+          },
+          orderBy: { sortOrder: 'asc' },
         },
-        orderBy: { sortOrder: 'asc' },
       },
-    },
-  })
+    })
 
-  if (!category || !category.isVisible) notFound()
+    if (!category || !category.isVisible) notFound()
 
-  return (
-    <SubCategoriasClient
-      category={{ id: category.id, name: category.name, slug: category.slug, description: category.description }}
-      subCategories={category.subCategories.map(sub => ({
-        id: sub.id,
-        name: sub.name,
-        slug: sub.slug,
-        description: sub.description,
-        image: sub.image,
-        isVisible: sub.isVisible,
-        _count: sub._count,
-      }))}
-    />
-  )
+    return (
+      <SubCategoriasClient
+        category={{
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          description: category.description,
+        }}
+        subCategories={category.subCategories.map((sub) => ({
+          id: sub.id,
+          name: sub.name,
+          slug: sub.slug,
+          description: sub.description,
+          image: sub.image,
+          isVisible: sub.isVisible,
+          _count: sub._count,
+        }))}
+      />
+    )
+  } catch (err: any) {
+    console.error('[CategoriaSlugPage] erro Prisma:', err?.message ?? err)
+    notFound()
+  }
 }

@@ -3,7 +3,6 @@ import { Cinzel, Playfair_Display, Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { Toaster } from 'react-hot-toast'
-import FloatingHearts from '@/components/shared/FloatingHearts'
 
 const cinzel = Cinzel({
   subsets: ['latin'],
@@ -47,7 +46,6 @@ export default function RootLayout({
     <html lang="pt-BR" className={`${cinzel.variable} ${playfair.variable} ${inter.variable}`}>
       <body className="bg-black text-white font-body antialiased">
         <Providers>
-          <FloatingHearts />
           {children}
           <Toaster
             position="top-right"
