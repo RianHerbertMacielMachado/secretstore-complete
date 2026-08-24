@@ -3,9 +3,7 @@ import { prisma } from '@/lib/prisma'
 import LayoutThemeApplier from '@/components/layouts/LayoutThemeApplier'
 import StoreLayout from '@/components/layouts/StoreLayout'
 
-// Revalida a cada 60 segundos — navbar, ticker e popup mudam raramente
-// Elimina queries ao DB em cada navegação entre páginas da loja
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -74,7 +72,9 @@ export default async function StoreGroupLayout({ children }: { children: React.R
 
     try {
       const raw = (storeSettings as any)?.socialLinks
-      if (raw && typeof raw === 'string') socialLinks = JSON.parse(raw)
+      if (raw && typeof raw === 'string') {
+        socialLinks = JSON.parse(raw)
+      }
     } catch {}
 
     const popupEnabled = map.popup_enabled === 'true'
@@ -98,6 +98,7 @@ export default async function StoreGroupLayout({ children }: { children: React.R
     }
   } catch (err: any) {
     console.error('[StoreLayout] erro Prisma:', err?.message ?? err)
+    // Usa valores padrão definidos acima — loja funciona sem configurações do DB
   }
 
   return (

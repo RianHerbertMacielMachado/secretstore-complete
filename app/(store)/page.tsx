@@ -2,9 +2,7 @@ import { prisma } from '@/lib/prisma'
 import HeroSection from '@/components/store/HeroSection'
 import HeroCarousel from '@/components/store/HeroCarousel'
 
-// Revalida a cada 60 segundos — hero e carrossel mudam raramente
-// Elimina query ao DB em cada visita à home
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   let carouselItems: { id: string; name: string; image: string; link: string }[] = []
