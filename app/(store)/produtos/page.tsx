@@ -12,10 +12,6 @@ interface Props {
   searchParams: { categoria?: string; busca?: string; ordem?: string }
 }
 
-// Remove null bytes (U+0000) que causam:
-//   PrismaClientKnownRequestError: Failed to convert rust `String` into napi `string`
-//   digest: '402100154'
-// Nenhuma migration necessária — sanitização feita no JS antes de passar ao cliente.
 function s(v: string | null | undefined): string {
   return (v ?? '').replace(/\u0000/g, '')
 }
@@ -26,6 +22,7 @@ export default async function ProdutosPage({ searchParams }: Props) {
   let products: any[] = []
   let categories: any[] = []
   let productsPerPage = 15
+  let errorMsg: string | null = null
 
   try {
     const [rawProducts, rawCategories, storeSettings] = await Promise.all([
@@ -42,11 +39,29 @@ export default async function ProdutosPage({ searchParams }: Props) {
               }
             : {}),
         },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          price: true,
+          salePrice: true,
+          mainImage: true,
+          featured: true,
+          status: true,
+          description: true,
+          driveLink: true,
+          youtubeUrl: true,
+          subCategoryId: true,
           subCategory: {
-            include: { category: true },
+            select: {
+              id: true,
+              slug: true,
+              categoryId: true,
+              category: {
+                select: { id: true, name: true, slug: true },
+              },
+            },
           },
-          productImages: { orderBy: { order: 'asc' } },
         },
         orderBy:
           ordem === 'preco-asc'
@@ -75,14 +90,25 @@ export default async function ProdutosPage({ searchParams }: Props) {
       mainImage: s(p.mainImage),
       driveLink: s(p.driveLink),
       youtubeUrl: p.youtubeUrl ? s(p.youtubeUrl) : null,
-      images: p.productImages.map((img: any) => s(img.url)),
       category: p.subCategory.category,
       subCategoryId: p.subCategoryId,
       categoryId: p.subCategory.categoryId,
     }))
   } catch (err: any) {
-    console.error('[ProdutosPage] erro Prisma:', err?.message ?? err)
-    // Retorna lista vazia em vez de crash — digest 402100154 (null bytes) ou falha de DB
+    errorMsg = err?.message ?? String(err)
+    console.error('[ProdutosPage] erro Prisma:', errorMsg)
+  }
+
+  // Mostra o erro real em dev ou para facilitar diagnóstico em produção
+  if (errorMsg && products.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
+        <p className="text-white/60 text-lg">Erro ao carregar produtos.</p>
+        <pre className="text-red-400 text-xs bg-white/5 rounded-lg p-4 max-w-2xl w-full overflow-auto whitespace-pre-wrap">
+          {errorMsg}
+        </pre>
+      </div>
+    )
   }
 
   return (
