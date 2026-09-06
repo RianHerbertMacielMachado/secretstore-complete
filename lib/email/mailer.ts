@@ -288,3 +288,126 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<bool
     return false
   }
 }
+
+// ─── E-mail de recuperação de senha ─────────────────────────────────────────
+
+interface PasswordResetEmailParams {
+  to: string
+  name: string
+  resetUrl: string
+}
+
+/**
+ * Envia e-mail com link para redefinição de senha.
+ * O link expira em 1 hora.
+ */
+export async function sendPasswordResetEmail(
+  params: PasswordResetEmailParams
+): Promise<boolean> {
+  try {
+    await sendEmail({
+      to: params.to,
+      subject: '🔐 Redefinição de senha — Secret Store',
+      html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#000;font-family:'Inter',sans-serif;color:#fff;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:40px;padding:30px;
+                background:linear-gradient(135deg,#0d0d0d 0%,#1a001a 100%);
+                border:1px solid rgba(255,0,127,0.3);border-radius:16px;">
+      <div style="font-size:32px;margin-bottom:8px;">✝</div>
+      <h1 style="font-size:28px;font-weight:900;margin:0;letter-spacing:4px;
+                  color:#fff;text-shadow:0 0 20px #ff007f;">
+        SECRET<span style="color:#ff007f;">STORE</span>
+      </h1>
+      <p style="color:rgba(255,255,255,0.5);margin:8px 0 0;font-size:14px;">
+        Produtos Digitais Premium
+      </p>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div style="background:#0d0d0d;border:1px solid rgba(255,255,255,0.1);
+                border-radius:16px;padding:32px;margin-bottom:24px;">
+
+      <!-- Ícone de cadeado -->
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="display:inline-flex;align-items:center;justify-content:center;
+                    width:64px;height:64px;border-radius:50%;
+                    background:rgba(255,0,127,0.1);
+                    border:1px solid rgba(255,0,127,0.3);font-size:28px;">
+          🔐
+        </div>
+      </div>
+
+      <h2 style="color:#fff;font-size:22px;margin:0 0 8px;font-weight:700;text-align:center;">
+        Redefinição de Senha
+      </h2>
+      <p style="color:rgba(255,255,255,0.6);margin:0 0 28px;line-height:1.6;text-align:center;">
+        Olá, <strong style="color:#fff;">${params.name}</strong>!<br>
+        Recebemos uma solicitação para redefinir a senha da sua conta.
+      </p>
+
+      <!-- Botão principal -->
+      <div style="text-align:center;margin-bottom:28px;">
+        <a href="${params.resetUrl}"
+           style="display:inline-block;background:linear-gradient(135deg,#ff007f,#cc0066);
+                  color:#fff;padding:16px 40px;border-radius:12px;
+                  font-weight:700;font-size:16px;text-decoration:none;
+                  letter-spacing:0.5px;
+                  box-shadow:0 0 30px rgba(255,0,127,0.4);">
+          Redefinir minha senha
+        </a>
+      </div>
+
+      <!-- Aviso de expiração -->
+      <div style="background:rgba(255,165,0,0.05);border:1px solid rgba(255,165,0,0.2);
+                  border-radius:10px;padding:16px;margin-bottom:20px;text-align:center;">
+        <p style="margin:0;color:rgba(255,165,0,0.9);font-size:13px;">
+          ⏱️ Este link é válido por <strong>1 hora</strong>
+        </p>
+      </div>
+
+      <!-- URL do link (fallback) -->
+      <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:0 0 4px;">
+        Se o botão não funcionar, copie e cole o link abaixo no seu navegador:
+      </p>
+      <p style="background:#1a1a1a;border:1px solid #333;border-radius:8px;
+                padding:12px;word-break:break-all;font-size:11px;
+                color:rgba(255,0,127,0.8);font-family:monospace;margin:0;">
+        ${params.resetUrl}
+      </p>
+    </div>
+
+    <!-- Aviso de segurança -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+                border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0;color:rgba(255,255,255,0.4);font-size:12px;line-height:1.6;">
+        🛡️ <strong style="color:rgba(255,255,255,0.6);">Não solicitou a redefinição?</strong><br>
+        Ignore este e-mail. Sua senha permanece a mesma e nenhuma alteração foi feita na sua conta.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding-top:24px;border-top:1px solid #1a1a1a;">
+      <p style="color:rgba(255,255,255,0.3);font-size:12px;margin:0;">
+        Secret Store · Produtos Digitais Premium<br>
+        Este email foi enviado automaticamente. Não responda a este email.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>`,
+    })
+    return true
+  } catch (error) {
+    console.error('[EMAIL PASSWORD RESET]', error)
+    return false
+  }
+}
