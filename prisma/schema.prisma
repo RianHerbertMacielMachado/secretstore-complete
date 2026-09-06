@@ -11,20 +11,35 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  password      String?
-  role          String    @default("CUSTOMER")
-  googleId      String?
-  discordId     String?
-  avatar        String?
-  emailVerified DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  orders        Order[]
-  accounts      Account[]
-  sessions      Session[]
+  id                 String               @id @default(cuid())
+  name               String
+  email              String               @unique
+  password           String?
+  role               String               @default("CUSTOMER")
+  googleId           String?
+  discordId          String?
+  avatar             String?
+  emailVerified      DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  orders             Order[]
+  accounts           Account[]
+  sessions           Session[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+// Token de recuperação de senha
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
 }
 
 model Account {
