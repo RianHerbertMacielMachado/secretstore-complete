@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -14,9 +14,26 @@ interface Props {
 
 export default function LoginForm({ storeName }: Props) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({ email: '', password: '' })
+
+  // Mostra erro quando NextAuth redireciona de volta para login com ?error=
+  useEffect(() => {
+    const error = searchParams.get('error')
+    if (error) {
+      const messages: Record<string, string> = {
+        OAuthCallback: 'Erro no login social. Verifique a configuração do aplicativo.',
+        OAuthSignin: 'Erro ao iniciar login social. Tente novamente.',
+        OAuthAccountNotLinked: 'Este email já está cadastrado com outro método de login.',
+        AccessDenied: 'Acesso negado.',
+        Configuration: 'Erro de configuração. Contate o suporte.',
+        OAuthNotConfigured: 'Login social não está disponível no momento.',
+      }
+      toast.error(messages[error] ?? 'Erro ao fazer login. Tente novamente.')
+    }
+  }, [searchParams])
 
   // Divide o nome ao meio: primeira metade branca, segunda neon-pink
   const mid = Math.ceil(storeName.length / 2)
@@ -48,7 +65,14 @@ export default function LoginForm({ storeName }: Props) {
 
   const handleSocialLogin = async (provider: 'google' | 'discord') => {
     setIsLoading(true)
-    await signIn(provider, { callbackUrl: '/' })
+    try {
+      // callbackUrl deve ser absoluto para evitar problemas de redirect em produção
+      const callbackUrl = window.location.origin + '/'
+      await signIn(provider, { callbackUrl })
+    } catch {
+      toast.error('Erro ao conectar com ' + (provider === 'discord' ? 'Discord' : 'Google'))
+      setIsLoading(false)
+    }
   }
 
   return (
